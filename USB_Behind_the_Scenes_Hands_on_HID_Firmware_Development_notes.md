@@ -30,11 +30,11 @@
   - Thunderbolt 3 hardware interface (40 Gbits/s).
   - Connectors: only C .
 
-#### USB 2.0 Cable Structure:
+### USB 2.0 Cable Structure:
 
 ![USB 2.0 Cable Structure](./Pictures/USB_2_0_Cable_Structure.png)
 
-#### USB Main Features:
+### USB Main Features
 
 - Hot-pluggable (plug and play).
 - Self configured.
@@ -42,9 +42,9 @@
 - USB is host controlled (single host per bus).
 - Every USB Product is programmed to have a vendor ID and Product ID(VID/PID)
 - Every USB device is addressed by the host uniquely during device enumeration.
-- USB is a polled bus (frequently sampled by both host and devices without including any interrupt mechanism in the USB controller and according to the state found on the bus after sampling the bus specific actions or events happen).
+- USB is a **polled bus** (frequently sampled by both host and devices without including any interrupt mechanism in the USB controller and according to the state found on the bus after sampling the bus specific actions or events happen).
 
-#### Physical Bus Topology:
+### Physical Bus Topology
 
 - In USB, host and devices are connected physically to the bus according to the "tired-star" topology.
 
@@ -56,5 +56,42 @@
 
   ![alt-text-1](./Pictures/Tiered_Star_Topology_figure.png "title-1") ![alt-text-2](./Pictures/Tiered_Star_Topology_Block_Diagram.png "title-2")
 
+### USB Device Power Supply
+
+- Bus-Powered (VBUS): up to 500 mA for USB 2.0 , or up to 900 mA for USB 3.x
+
+- Self-powered (external power supply):
+
+  Devices that require more current than what VBUS can supply must use an external power supply.
+
+- Mixing the two types is also possible  
+
   
 
+### VBUS  
+
+- The nominal VBUS voltage is normally ~5 V.
+
+- VBUS voltage can drop down to ~ 4.4 V (according to the load on the VBUS).
+
+- USB device can normally draw current from the host through the VBUS depending on its state:
+  - **Not configured** (default state, newly connected device):
+
+    USB 2.0: up to 100 mA.
+    USB 3.x: up to 150 mA.
+
+  - **Configured**(host and device have negotiated):
+
+    USB 2.0: may **ask** to draw up to 500 mA (high power device).
+    USB 3.x: may **ask** to draw up to 900 mA (high power device). 
+
+    - **Suspended**(device is idle):
+
+      Up to 0.5 mA (2.5 mA if configured as high power). The current of the pull up and pull down resistors must be considered (they sink ~ 0.2 mA).
+
+
+- USB device can draw more current -if needed- according to battery charging and   power delivery specifications.
+
+  
+
+- 
