@@ -31,3 +31,8 @@
   - Connectors: only C .
 
 USB 2.0 Cable Structure
+
+![USB 2.0](https://github.com/DEV-5/MY_NOTES/blob/main/Pictures/USB_2_0_Cable_Structure.png)
+
+![USB 2.0 Cable Structure](./Pictures/USB_2_0_Cable_Structure.png)
+
