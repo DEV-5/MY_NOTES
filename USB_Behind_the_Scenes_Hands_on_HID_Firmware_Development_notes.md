@@ -91,7 +91,10 @@
 
 
 - USB device can draw more current -if needed- according to battery charging and   power delivery specifications.
+- USB BC(Battery Charging) spec 1.2 (Dec 2010): up to 1.5 A
+- USB PD(Power Delivery) spec Ver 2 rev 3(Aug 2019): allows up to 100 watt (5 A by 20 V).
 
-  
+### Smart Charger
 
-- 
+- The smart charger has a dedicated charging port (DCP) controller.
+- The DCP tries different states(sine voltage, square voltage signal etc) and monitors the amount of the drawn current.
