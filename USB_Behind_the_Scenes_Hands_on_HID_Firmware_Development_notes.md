@@ -30,5 +30,31 @@
   - Thunderbolt 3 hardware interface (40 Gbits/s).
   - Connectors: only C .
 
-### USB 2.0 Cable Structure:
+#### USB 2.0 Cable Structure:
+
 ![USB 2.0 Cable Structure](./Pictures/USB_2_0_Cable_Structure.png)
+
+#### USB Main Features:
+
+- Hot-pluggable (plug and play).
+- Self configured.
+- Some device can be powered directly from the USB(bus-powered).
+- USB is host controlled (single host per bus).
+- Every USB Product is programmed to have a vendor ID and Product ID(VID/PID)
+- Every USB device is addressed by the host uniquely during device enumeration.
+- USB is a polled bus (frequently sampled by both host and devices without including any interrupt mechanism in the USB controller and according to the state found on the bus after sampling the bus specific actions or events happen).
+
+#### Physical Bus Topology:
+
+- In USB, host and devices are connected physically to the bus according to the "tired-star" topology.
+
+- Up top 127 devices  can be connected to the bus including the hubs (devices are 7 bit addressed , and address 0 is reserved as initial address for every new connected device)
+
+- Up to 7 tiers are allowed.
+
+- Up to 5 hubs can be connected in series.
+
+  ![alt-text-1](./Pictures/Tiered_Star_Topology_figure.png "title-1") ![alt-text-2](./Pictures/Tiered_Star_Topology_Block_Diagram.png "title-2")
+
+  
+
