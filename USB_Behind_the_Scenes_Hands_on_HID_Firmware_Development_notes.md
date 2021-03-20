@@ -195,7 +195,7 @@ Host driver had to be written to support all of the these three controllers.
 
 - SOF signal is used to keep the data on the bus in sync.
 
-  ![Frames](/home/v_dev/MY_GIT_REPOS/MY_NOTES/Pictures/Frames.png)
+  ![Frames](./Pictures/Frames.png)
 
 
 
