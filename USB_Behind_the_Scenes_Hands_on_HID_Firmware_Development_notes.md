@@ -60,7 +60,7 @@
 
 - Up to 5 hubs can be connected in series.
 
-  ![alt-text-1](./Pictures/Tiered_Star_Topology_figure.png "title-1") ![alt-text-2](./Pictures/Tiered_Star_Topology_Block_Diagram.png "title-2")
+  <img src="./Pictures/Tiered_Star_Topology_figure.png" alt="alt-text-1" title="title-1" style="zoom: 50%;" /> <img src="./Pictures/Tiered_Star_Topology_Block_Diagram.png" alt="alt-text-2" title="title-2" style="zoom:50%;" />
 
 ### USB Device Power Supply
 
@@ -108,6 +108,8 @@
 
   
 
+
+
 ## USB Protocol
 
 ------
@@ -121,7 +123,7 @@
 
 ​									The Difference should be >= 200 mV.
 
-- Differential states allows external noise to be filtered as D+ and D- are both going to be effected by noise equally hence they output doesn't have noise
+- Differential states allows external noise to be filtered as D+ and D- are both going to be effected by noise equally hence the noise would be canceled out in the output.
 
 
 
