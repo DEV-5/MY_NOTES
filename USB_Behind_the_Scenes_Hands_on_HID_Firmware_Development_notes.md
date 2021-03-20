@@ -130,3 +130,7 @@
 | Resume                        | K(20 ms) EOP.   | k (>= 20 ms)                     |
 | Sync or Start of Packet (SOP) | K J K J K J K K | 15x(K J) K K                     |
 | End of Packet (EOP)           | SE0 SE0 J       | 1111111(bit stuffing error)      |
+
+### USB 2.0 Speed Identification
+
+![USB 2.0 speed indentification](./Pictures/USB_2_0_Speed_Identification.png)
