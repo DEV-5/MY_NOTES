@@ -98,3 +98,35 @@
 
 - The smart charger has a dedicated charging port (DCP) controller.
 - The DCP tries different states(sine voltage, square voltage signal etc) and monitors the amount of the drawn current.
+
+### Deferential states
+
+|                | Full and High Speed | Low Speed    |
+| -------------- | ------------------- | ------------ |
+| Differential 0 | D+Low D-High        | D-Low D+High |
+| Differential 1 | D-Low D+High        | D+Low D-High |
+
+​									The Difference should be >= 200 mV.
+
+- Differential states allows external noise to be filtered as D+ and D- are both going to be effected by noise equally hence they output doesn't have noise
+
+### Bus States
+
+| State                | FS   | HS   | LS                      |
+| -------------------- | :--: | ---- | ----------------------- |
+| SE0 (Single Ended 0) |     both data lines are low      | same           | same           |
+| Detached | SE0 | same | same |
+| Idle | Differential 1 | SE0 | Differential 0 |
+| J | Differential 1 (as idle state) | Differential 1 | Differential 0 |
+| K | Differential 0 | Differential 0 | Differential 1 |
+| ~~SE1 (single Ended 1)~~ | ~~both data lines are high (illegal)~~ | ~~same~~ | ~~same~~ |
+
+### Bus States 2
+
+| State                         | FS              | HS                               |
+| ----------------------------- | --------------- | -------------------------------- |
+| RESET                         | SE0 (>=10 ms)   | idle (3.15) then keeps the SE0   |
+| Suspend                       | Idle (3 ms)     | Idle (3.125 ms) then FS idle (J) |
+| Resume                        | K(20 ms) EOP.   | k (>= 20 ms)                     |
+| Sync or Start of Packet (SOP) | K J K J K J K K | 15x(K J) K K                     |
+| End of Packet (EOP)           | SE0 SE0 J       | 1111111(bit stuffing error)      |
