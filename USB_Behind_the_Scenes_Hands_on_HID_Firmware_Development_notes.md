@@ -8,8 +8,8 @@
 
 ### Definition:
 
-- Serial Protocol used for transfer of data and power.
-- Multiple protocols and ports and respective drivers were needed.
+- USB is a Serial Protocol used for transfer of data and power.
+- Prior to USB multiple protocols and ports and respective drivers were needed.
 
 ###  History:
 
