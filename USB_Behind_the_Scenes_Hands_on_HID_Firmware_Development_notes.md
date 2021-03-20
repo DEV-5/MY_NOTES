@@ -1,6 +1,12 @@
-## USB Behind the Scenes: Hands-on HID Firmware Development
+# USB Behind the Scenes: Hands-on HID Firmware Development
 
-### Introduction:
+------
+
+## Introduction to USB
+
+------
+
+### Definition:
 
 - Serial Protocol used for transfer of data and power.
 - Multiple protocols and ports and respective drivers were needed.
@@ -97,7 +103,14 @@
 ### Smart Charger
 
 - The smart charger has a dedicated charging port (DCP) controller.
+
 - The DCP tries different states(sine voltage, square voltage signal etc) and monitors the amount of the drawn current.
+
+  
+
+## USB Protocol
+
+------
 
 ### Deferential states
 
@@ -110,6 +123,8 @@
 
 - Differential states allows external noise to be filtered as D+ and D- are both going to be effected by noise equally hence they output doesn't have noise
 
+
+
 ### Bus States
 
 | State                | FS   | HS   | LS                      |
@@ -121,6 +136,8 @@
 | K | Differential 0 | Differential 0 | Differential 1 |
 | ~~SE1 (single Ended 1)~~ | ~~both data lines are high (illegal)~~ | ~~same~~ | ~~same~~ |
 
+
+
 ### Bus States 2
 
 | State                         | FS              | HS                               |
@@ -128,9 +145,74 @@
 | RESET                         | SE0 (>=10 ms)   | idle (3.15) then keeps the SE0   |
 | Suspend                       | Idle (3 ms)     | Idle (3.125 ms) then FS idle (J) |
 | Resume                        | K(20 ms) EOP.   | k (>= 20 ms)                     |
-| Sync or Start of Packet (SOP) | K J K J K J K K | 15x(K J) K K                     |
+| Sync or Start of Packet (SOP) | K J K J K J K K | 15 times(K J) K K                |
 | End of Packet (EOP)           | SE0 SE0 J       | 1111111(bit stuffing error)      |
+
+
 
 ### USB 2.0 Speed Identification
 
 ![USB 2.0 speed indentification](./Pictures/USB_2_0_Speed_Identification.png)
+
+
+
+### Bit Stuffing
+
+- The insertion of non-information bits(s) into the data.
+
+- In USB FS/HS: **zero insertion after six consecutive ones**.
+- Ensures adequate state transition on the line (to keep the clock in sync).
+
+### Non-Return-To-Zero Inverted (NRZI)
+
+- NRZI and Bit Stuffing are handled by hardware itself (USB controller)
+
+- Zero inverts the line state as it is.
+
+  <img src="./Pictures/Non-return-to-Zero_inverted.png" alt="NRZI" style="zoom:150%;" />
+
+
+
+### USB Host Controllers
+
+- USB 1.x:
+  - Universal Host Controller Interface (UHCI): **software** has to do a lot of bus management work.
+  - Open Host Controller Interface (OHCI): **hardware** is responsible for doing most of the bus management work.
+
+- USB 2.0:
+  - Extended Host Controller Interface (EHCI).
+
+Host driver had to be written to support all of the these three controllers.
+
+- USB 3.x (and the earlier versions):
+  - Extensible Host Controller Interface (xHCI): the newest host controller which replaces the older controllers.
+
+
+
+### Frames
+
+- The times between two SOF signals is called a frame.
+
+- SOF signal is used to keep the data on the bus in sync.
+
+  ![Frames](/home/v_dev/MY_GIT_REPOS/MY_NOTES/Pictures/Frames.png)
+
+
+
+### Endpoints
+
+- An endpoint is a logical entity and it can be seen as data sender or as data receiver (depending on the endpoint type).
+
+- Endpoints can be found only in the USB device side not on the host. (hint: Endpoints are similar to ports on TCP)
+- The **direction** of the endpoint is named from the **host perspective**.
+
+- ​        IN: from device to host.          OUT: from host to device.
+- Devices can have up to 16 IN and 16 OUT endpoints.
+- IN endpoint X and OUT endpoint X are totally two different endpoints (exception endpoint 0). Example IN endpoint 2 is different from OUT endpoint 2.
+
+- Every device must support the endpoint 0 IN and OUT.
+- Endpoint zero is used to configure the device.
+-  the host send configuration data to device over OUT endpoint 0 and device will reply to requests of the host using IN endpoint 0.
+
+### [Packet and Transaction Types](./PDFs/USB+Under+the+Microscope+-+Packets+and+Transaction+Types.pdf)
+
