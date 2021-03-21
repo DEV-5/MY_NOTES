@@ -9,7 +9,8 @@
 ### Definition:
 
 - USB is a Serial Protocol used for transfer of data and power.
-- Prior to USB multiple protocols and ports and respective drivers were needed.
+- Prior to USB multiple protocols and ports and respective drivers were needed. 
+- USB was created to solve this problem and unify all standards.
 
 ###  History:
 
@@ -216,5 +217,57 @@ Host driver had to be written to support all of the these three controllers.
 - Endpoint zero is used to configure the device.
 -  the host send configuration data to device over OUT endpoint 0 and device will reply to requests of the host using IN endpoint 0.
 
-### [Packet and Transaction Types](./PDFs/USB+Under+the+Microscope+-+Packets+and+Transaction+Types.pdf)
+### [Packet and Transaction Types PDF](./PDFs/USB+Under+the+Microscope+-+Packets+and+Transaction+Types.pdf)
 
+### Packets
+
+- In USB data is transmitted as packets.
+- Size of the packet is dependent on the endpoint which will send data to the host.
+
+![](./Pictures/Packets.png)
+
+- **Packet Transmission**:
+  - The bytes of a packet are transmitted least-significant bits first.
+
+![Packet Transmission](/home/v_dev/MY_GIT_REPOS/MY_NOTES/Pictures/Packet_Transmission.png)
+
+### Packet Types and Fields
+
+![](./Pictures/Packet_Type.png)
+
+- Start of Frame Packet is also a type of Token Packet
+- Start of Frame Packet  starts with Sync /SOP followed by PID (Packet Identifier followed by Frame no which have no of the current frame followed by CRC5 and end with EOP.
+- Token packet has all field present in start of packet in addition to this it has an device identifier field (ADDR) which represents the device to or from which the packet and the following packets are being sent as token packet describes not only about itself but also the packets that will follow it.
+- Token packet has Endpoint number field (ENDP) which has the end point number from which this packet and the following packets are being sent.
+
+- In Data packet starts with Sync /SOP followed by PID and followed by payload/data followed by CRC16 followed by EOP.
+- Handshake packets is sent to tell about status of previous packet which is typically data packet
+- They are different types of token packets, data packets ans handshake packets they differ from each other due to the value of the PID. 
+
+
+
+### Transaction
+
+- Every Transaction is a fully completed data exchange between host and the device.
+- Every USB Transaction consists of a sequence of three(or two) packets:
+  1. Token packets
+  2. Data packets
+  3. Handshake Packet (Isochronous transfer does not use handshake packet).
+
+
+
+### Packet Identifiers
+
+![PIDs](/home/v_dev/MY_GIT_REPOS/MY_NOTES/Pictures/PIDs.png)
+
+### Token
+
+Token packet indicates the start of a transaction of one of the following types:
+
+- IN: indicates that the host will read data from the device.
+
+- OUT: Indicates that the host will send data from the device.
+
+- SETUP: Indicates that the host will send SETUP data to the device. (USB request from the host).
+
+  
