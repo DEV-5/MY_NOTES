@@ -229,7 +229,11 @@ Host driver had to be written to support all of the these three controllers.
 - **Packet Transmission**:
   - The bytes of a packet are transmitted least-significant bits first.
 
-![Packet Transmission](/home/v_dev/MY_GIT_REPOS/MY_NOTES/Pictures/Packet_Transmission.png)
+![Packet Transmission](./Pictures/Packet_Transmission.png)
+
+
+
+
 
 ### Packet Types and Fields
 
@@ -258,9 +262,11 @@ Host driver had to be written to support all of the these three controllers.
 
 ### Packet Identifiers
 
-![PIDs](/home/v_dev/MY_GIT_REPOS/MY_NOTES/Pictures/PIDs.png)
+![PIDs](./Pictures/PIDs.png)
 
-### Token
+
+
+#### Token
 
 Token packet indicates the start of a transaction of one of the following types:
 
@@ -268,6 +274,41 @@ Token packet indicates the start of a transaction of one of the following types:
 
 - OUT: Indicates that the host will send data from the device.
 
-- SETUP: Indicates that the host will send SETUP data to the device. (USB request from the host).
+- SETUP: Indicates that the host will send SETUP data to the device. (SETUP token packet indicates that host will send setup data, this setup data is noting but data packet follows the setup token and this data packet contains USB request from the host).
+
+  - Setup token can only be used with certain type of endpoint i.e setup tokens are only send to control end points. endpoint 0 is a control end point.
+
+- Token packet is always sent at the beginning of every USB transaction.
 
   
+
+#### Data
+
+- Data 0 and Data 1 packets do the exact same task, transmitting data.
+
+- Data 0 and Data 1 are used alternatively just as a method of error checking. But their job is only to transfer data. 
+
+- Sending payload in the data packet is optional, so sending a zero length data packet is also valid.
+
+- Zero-length data packet  can be Data 0  or Data 1 packet that has no data in its Data field.
+
+- Zero-length data packet tells mainly that sending data is done if the length of the last data packet equals endpoint's max size.
+
+  
+
+#### Handshake
+
+Handshake packets indicates the end of a transaction with one of the following states:
+
+- ACK:
+  - The receiver acknowledges receiving the packet without error. 
+
+- NAK:
+  - The receiver cannot receive the data. eg: if receiver buffer is full
+  - The sender cannot send the data now. 
+
+- STALL:
+  - An error happened, the devices puts the corresponding endpoint om hold.
+  - The received SETUP request is not supported.
+
+- some endpoints don't require handshaking, so such endpoints can send or receive data without the need to waiting for any handshaking packet or without the need to send any handshaking packet.
