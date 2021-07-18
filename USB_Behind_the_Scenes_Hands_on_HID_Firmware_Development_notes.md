@@ -124,7 +124,7 @@
 
 ​									The Difference should be >= 200 mV.
 
-- Differential states allows external noise to be filtered as D+ and D- are both going to be effected by noise equally hence the noise would be canceled out in the output.
+- Differential states allows external noise to be filtered as D+ and D- are both going to be effected by noise equally hence the noise would be cancelled out in the output.
 
 
 
@@ -308,7 +308,115 @@ Handshake packets indicates the end of a transaction with one of the following s
   - The sender cannot send the data now. 
 
 - STALL:
-  - An error happened, the devices puts the corresponding endpoint om hold.
+  - An error happened, the devices puts the corresponding endpoint on hold.
   - The received SETUP request is not supported.
 
 - some endpoints don't require handshaking, so such endpoints can send or receive data without the need to waiting for any handshaking packet or without the need to send any handshaking packet.
+
+### Device Address
+
+- Every USB device connected to the bus  has a unique address.
+
+- Default device address is 0. 
+- Device address is assigned by the host while enumerating the device.
+- Device address can change when the device is disconnected and reconnected.
+
+### Bus Polling
+
+- Polling involves sampling  and not continuous monitoring. 
+- In USB polling means checking the bus frequently to deal with bus changes rather than using interrupt mechanisms.
+- Interrupt transfer is also implemented by polling (it is not really  an interrupt).
+
+### USB is Host-Driven
+
+- USB Transactions are triggered only by the host.
+- To send data from host to device (OUT), the host informs the device that it will be receiving some amount of data (by sending OUT or SETUP token packet), then the host sends the data(data packets) until the whole data is sent.
+- To send data from device to the host (IN) the device cannot simply control the bus and send the data whenever it wants. The Best the device can do is put the data on an end point and wait for IN token from the host when it needs the data only then the device sends them over the bus (as data packets).
+- If the data requested by the host is not available in the device at the moment then the device will reply to this IN token with NAK
+
+![USB IN and OUT](./Pictures/USB_DATA_IN_OUT.png)
+
+
+
+### Transfer Types (Endpoint Types)
+
+- Interrupt transfer
+
+- Bulk transfer
+- Isochronous transfer
+- Control transfer
+
+USB devices tell the host about the configurations of its endpoints in the early stage of device enumeration.
+
+#### Interrupt Transfer
+
+- Periodic transfer
+- Guarantees bus bandwidth (limited latency).
+- Guarantees error-free transfer(has error detection).
+- Used to get updates from a device regularly.
+- Maximum data payload: up to 64 bytes for FS, and up to 1024 bytes for HS.
+- Example: Mouse, Keyboard, and joystick.
+
+![Interrupt Transfer](./Pictures/Interrupt_Transfer.png)
+
+#### Bulk Transfer
+
+- Non-periodic transfer.
+- No guarantee of bus bandwidth (no specific latency guaranteed).
+- Guarantees error-free transfer (has error detection).
+- Used to transfer large amount of data.
+- Maximum packet size: 8, 16, 32, or 64 bytes for full speed, and 512 bytes for high speed.
+- Low speed does not support bulk transfer.
+- Example: writing data to an external USB storage.
+
+Refer above figure of Interrupt transfer as transaction process is the same for Bulk Transfer.  
+
+#### Isochronous Transfer
+
+- Periodic Transfer.
+- Guarantees bus bandwidth (limited latency).
+- Does not have error detection.
+- Used to transfer large amount of data without caring if some data gets missed or corrupted.
+- Maximum data payload: up to 1023 bytes for FS, and up to 1024 bytes for HS.
+- Example: typically used with cam stream and microphone.
+
+![Isochronous Transfer](./Pictures/Isochronous_Transfer.png)
+
+
+
+#### Control Transfer
+
+- Non-Periodic
+- Guarantees error-free transfer (has error detection).
+- Used to transfer device enumeration and configuration packets.
+- **Endpoint 0** (IN and OUT) must be configured to operate as "Control Transfer".
+- Maximum data payload: 8, 16, 32, or 64 bytes for full speed, and 64 bytes for high speed.
+
+Control transfer consists of **three stages**:
+
+1.  The **Setup Stage** (one Transaction).
+   - The host sends a setup token which tells the device that in upcoming data packet there will be USB request coming from the host.
+   - NAK and STALL Handshakes are not returned by device in this stage in case of error no response is provided by the device.
+2. The **Data Stage** (optional; Zero to multiple transactions).
+   - The number of data transactions during this stage depends on the USB request.
+3. The **Status stage** (one transaction).
+   - The Transaction  will be opposite of the data stage i.e if direction data send during data stage was out the host will send an IN during status stage.
+   - The  data packet in the status stage has no data in it (Zero Length data packet).
+   - It is just a signal to tell the Host or the Device that control transfer has just finished.
+
+![](./Pictures/Control_Transfer.png)
+
+
+
+### Bus Bandwidth Allocation
+
+When enumerating a USB device, **the host is responsible for allocating the bandwidth of the bus** for each endpoint of that device.
+
+Bandwidth allocation priority:
+
+1. ​	Periodic transfers (Interrupt and Isochronous):
+   - A specific endpoint can have only one periodic transfer per frame.
+   - Up to 90% of the bus bandwidth for full speed, and up to 80% of the bandwidth for high speed.
+2. Control transfer: the remaining 10% (FS) or 20% (HS).
+3. Bulk transfer: once everything else is allocated, the bulk takes the remaining bandwidth.
+
