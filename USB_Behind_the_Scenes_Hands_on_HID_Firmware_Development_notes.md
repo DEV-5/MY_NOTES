@@ -420,3 +420,7 @@ Bandwidth allocation priority:
 2. Control transfer: the remaining 10% (FS) or 20% (HS).
 3. Bulk transfer: once everything else is allocated, the bulk takes the remaining bandwidth.
 
+### USB Firmware Architecture
+
+![USB Firmware Architecture](./Pictures/USB_Firmware_Architecture.png)
+
