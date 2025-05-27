@@ -119,8 +119,8 @@
 
 |                | Full and High Speed | Low Speed    |
 | -------------- | ------------------- | ------------ |
-| Differential 0 | D+Low D-High        | D-Low D+High |
-| Differential 1 | D-Low D+High        | D+Low D-High |
+| Differential 0 | D+Low D-High        | D+High D-Low |
+| Differential 1 | D+High D-Low        | D+Low D-High |
 
 ​									The Difference should be >= 200 mV.
 
