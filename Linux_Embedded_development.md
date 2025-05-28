@@ -25,7 +25,7 @@
 
 - The Linux Kernel (1991):
 
-  <img src="/home/vdev/My_Git_Repos/MY_NOTES/Pictures/Linux/GNULinux.jpg" style="zoom:67%;" />
+  <img src="./Pictures/Linux/GNULinux.jpg" style="zoom:67%;" />
 
   - In 1991, Linus Torvalds, a Finnish student at the University of Helsinki, was inspired to write an operating system for his Intel 80386 PC.
   - Inspired by Minix, a small UNIX-like operating system kernel Torvalds started on a project to create an efficient, full-featured UNIX kernel to run on the 386. Over a few months, Torvalds developed a basic kernel that allowed him to compile and run various GNU programs. Then, on
@@ -49,7 +49,7 @@
 
 ### C compilation 
 
-![stages of C compilation](/home/vdev/My_Git_Repos/MY_NOTES/Pictures/Linux/Stages_of_Compilation.png)
+![stages of C compilation](./Pictures/Linux/Stages_of_Compilation.png)
 
 - Understanding translation would lead to writing more efficient programming.
 - `Objdump -D` (Dis assembler all flag) is used to display the information from the object files
@@ -73,6 +73,7 @@
 - Linker appends run time routines \ bootstrap code. optionally resolving library call relocation
 - Run time code **initialises** the heap section and stack section.
 - Run time code also provides command line arguments to main `_start`(constructor) `_fini` (destructor)
+- Run time code is always OS specific
 - [How main in executed in Linux](https://linuxgazette.net/issue84/hawk.html)
 
 
@@ -80,18 +81,132 @@
 ### Application Binary Interface (ABI)
 
 - An application binary interface (ABI) is a set of rules specifying how a binary executable should exchange information with some service (e.g., the kernel or a library) at run time. Among other things, an ABI specifies which registers and stack locations are used to exchange this information, and what meaning is attached to the exchanged values. Once compiled for a particular ABI, a binary executable should be able to run on any system presenting the same ABI.
+
 - ABI are provided by Linux/UNIX both have ABI standard as System V 
-  - Run time standard is system V (5) 
-  - **Todo** add links for AARCH64 and x86-64
 
+  - Run time standard is system V (5)  [Link](https://www.sco.com/developers/gabi/latest/contents.html)
 
+  - ##### ABI for the Arm 64-bit Architecture
+
+    - Procedure Call Standard for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/aapcs64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/aapcs64/aapcs64.rst)
+    - ELF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/aaelf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/aaelf64/aaelf64.rst)
+    - DWARF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/aadwarf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/aadwarf64/aadwarf64.rst)
+    - C++ ABI for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/cppabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/cppabi64/cppabi64.rst)
+    - Vector Function ABI for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/vfabia64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/vfabia64/vfabia64.rst)
+    - PAuth ABI Extension to ELF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/pauthabielf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/pauthabielf64/pauthabielf64.rst)
+    - System V ABI for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/sysvabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/sysvabi64/sysvabi64.rst)
+    - Memtag Extension to ELF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/memtagabielf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/memtagabielf64/memtagabielf64.rst)
+    - C/C++ Atomics Application Binary Interface Standard for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/atomicsabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/atomicsabi64/atomicsabi64.rst)
 
 ### Startup Initializer Subsystem
 
+- Bios or boot loader are responsible to load Kernel into user space
+
 - Core startup initializer subsystems:  Run during system startup are responsible for system init.
-  - Architecture specific/ kernel bsp / HAL code, does i/o initialization
-  - In Kernel : Takes care of  boot up activities, calibration and core data structure initialization of Data structures of interrupt tables, paging tables, Device tables
-  - Initializes service subsystem and loader
-  - Loader then initializes UI (interactive or non interactive).
+
+  - Architecture specific/ kernel bsp / HAL code, does i/o initialization.
+  - In Kernel : Takes care of  boot up activities, calibration and core data structure initialization of Data structures of interrupt tables, paging tables, Device tables.
+  - Initializes service subsystem and loader, Loader then initializes UI (interactive or non interactive).
+
 - Service subsystem is responsible for allocation and deallocation of resources to user apps during run-time.
 
+  
+
+### OS types
+
+- General Purpose OS: They have a lot of services to accommodate different user application
+- Embedded OS: Here the number of services modules are limited to suit applications which are few in number
+  - Designed for specific embedded platforms.
+- Real time OS: Kernel designed with deterministic services that guarantee fixed time response under any load configuration.
+
+### Kernel types
+
+<img src="./Pictures/Linux/OS-structure2.svg.png" style="zoom:100%;" />
+
+- Monolithic kernel : 3rd party driver can corrupt kernel space in monolithic kernel.
+  - In monolithic kernel user application accessing kernel space termination with segmentation fault.
+- Micro Kernel : To tackle this issue in Micro kernel a separate space for 3rd party drivers is created.
+  - Micro kernel cannot be a distribution as drivers are to be a part of the user space
+- MMU is used to enforce the protection MMU shall inform the CPU that the user app is trying to access the kernel space and will inform the kernel
+
+|                           | Micro Kernel                                                 | Monolithic Kernel                                            |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Size**                  | Smaller                                                      | Larger as OS and both user lie in the same address space.    |
+| **Execution**             | Slower                                                       | Faster                                                       |
+| **Extendable**            | Easily extendable                                            | Complex to extend                                            |
+| **Security**              | If the service crashes then there is no effect on working on the micro kernel. | If the process/service crashes, the whole system crashes as both user and OS were in the same address space. |
+| **Code**                  | More code is required to write a micro kernel.               | Less code is required to write a monolithic kernel.          |
+| **Examples**              | L4Linux, macOS                                               | Windows, Linux BSD                                           |
+| **Security**              | More secure because only essential services run in kernel mode | Susceptible to security vulnerabilities due to the amount of code running in kernel mode |
+| **Platform independence** | More portable because most drivers and services run in user space | Less portable due to direct hardware access                  |
+| **Communication**         | Message passing between user-space servers                   | Direct function calls within Kernel                          |
+| **Performance**           | Lower due to message passing and more overhead               | High due to direct function calls and less overhead          |
+
+
+
+### Static and dynamic linkages
+
+- Libraries can be linked either statically or dynamically, If a library is integrated into  the application binary during image during build time it is referred to as static linking.
+
+- Libraries compatible with static linking must be files with a `.a`extension
+
+- If a library is linked with an app binary in memory then it is referred to as dynamic linkage.
+
+- For a library to be compatible with dynamic linking it must be built as per **API** standards of the platform
+
+- Dynamic libraries in Linux are identified by `.so` extension
+
+  #### Creating Library images
+
+  - ##### static library images
+
+    - Implement library  sources
+    - Compile source into relocatable binaries 
+      - eg: `gcc -c one.c -o one.o, gcc -c two.c -o two.o`
+    - Create a library image using archive tool (ar) 
+      - eg: `ar -rcs libtest.a one.o two.o`
+      - use `nm -s libtest.a` to look into the symbol list, 
+    - If crash location is known we can use symbol data to identify the function where crash occurred.
+    - **strip** is a tool to discard symbol table
+
+    
+
+  - **Dynamic Library creation**
+
+    - Implement library sources
+    - Compile source into position independent code eg: `gcc -c -fPIC one.c` and `gcc -c -fPIC two.c` 
+    - As linker is a file which adds ABI compatibility so we use Linker also generate the dynamic library.
+      - eg:`gcc -shared -o libtest.so one.o two.o`
+    - standard libraries are looked up linker for linkage
+    - hint use `objdump -sl | more` to know more
+    - Linker prepares PLT(procedure Link Table) which maintains a list dynamically
+    - In dynamically loaded libraries the function pointers for the library  functions will be updates only when library is loaded  i.e during run-time.
+    - Dynamic Linkages are resolved through PLT tables
+    - PLT which the linker generates at build time contains references of dynamically linked library functions.
+    - Each record of a PLT is a fn pointer whose address is referred by the calling intructions in the text segment 
+      - eg: `callq 400630 < test@plt>`
+    - To confirm an issue with library use the `ldd` tool.
+
+    
+
+    ##### Static Linkage
+
+    - Static linkage appends the library functions into executable's text segment and assign a base address for each .
+    - Function call instructions are directly referred to the base address of the function
+      - eg: `callq 4005e1 < test >`
+
+    
+
+    ##### Dynamic  Linkage
+
+    - Dynamic linked applications will have variable initialization lag. In case of static linking there is zero initialization lag.
+
+    - Dynamic linked apps are preferred for complex applications.
+
+      
+
+    **PROs and Cons of dynamic and static linkage**
+
+    
+
+    
