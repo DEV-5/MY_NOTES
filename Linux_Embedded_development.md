@@ -43,7 +43,7 @@
 
 - 7 for Subsystems and kernel components  eg: man 7 tcp
 
-- run man man to understand about man sections in detail
+- run `man man` to know more about the man sections
 
   
 
@@ -144,7 +144,7 @@
 
 
 
-### Static and dynamic linkages
+### Static and dynamic linkage
 
 - Libraries can be linked either statically or dynamically, If a library is integrated into  the application binary during image during build time it is referred to as static linking.
 
@@ -158,7 +158,9 @@
 
   #### Creating Library images
 
-  - ##### static library images
+  - 
+
+  - ##### Static library creation
 
     - Implement library  sources
     - Compile source into relocatable binaries 
@@ -177,13 +179,13 @@
     - Compile source into position independent code eg: `gcc -c -fPIC one.c` and `gcc -c -fPIC two.c` 
     - As linker is a file which adds ABI compatibility so we use Linker also generate the dynamic library.
       - eg:`gcc -shared -o libtest.so one.o two.o`
-    - standard libraries are looked up linker for linkage
+    - Standard libraries are looked up linker for linkage and need not be specified while compiling
     - hint use `objdump -sl | more` to know more
     - Linker prepares PLT(procedure Link Table) which maintains a list dynamically
     - In dynamically loaded libraries the function pointers for the library  functions will be updates only when library is loaded  i.e during run-time.
     - Dynamic Linkages are resolved through PLT tables
     - PLT which the linker generates at build time contains references of dynamically linked library functions.
-    - Each record of a PLT is a fn pointer whose address is referred by the calling intructions in the text segment 
+    - Each record of a PLT is a fn pointer whose address is referred by the calling instructions in the text segment 
       - eg: `callq 400630 < test@plt>`
     - To confirm an issue with library use the `ldd` tool.
 
@@ -191,8 +193,8 @@
 
     ##### Static Linkage
 
-    - Static linkage appends the library functions into executable's text segment and assign a base address for each .
-    - Function call instructions are directly referred to the base address of the function
+    - Static linkage appends the library functions into executable's text segment and assign a base address for each.
+    - Function call instructions are directly referred to the base address of the function.
       - eg: `callq 4005e1 < test >`
 
     
@@ -205,8 +207,115 @@
 
       
 
-    **PROs and Cons of dynamic and static linkage**
+    **PRO's  of static linkage**
 
-    
+    - Static executable are ready to run as soon as they are loaded (no init is needed).
 
+    - Static executable performs better on resource constrained systems.
+
+      
+
+    **CON's  of static linkage**
+
+    - Static executable are difficult to maintain in the long term.
+
+    - Static executable performs better on resource constrained systems.
+
+      
+
+    **PRO's  of dynamic linkage**
+
+    - Dynamic builds are modular, extensible and adaptable which enables easier long term maintenance.
+
+    - Dynamic builds can share a library image across n application which help optimal utilisation of memory in multi taking environment.
+
+      
+
+    **CON's  of dynamic linkage**
+
+    - Dynamic linkage involves updating PLT records of the application which is variable time operation and results in initialization lag.
+    - Dynamic linkages requires OS to support a run time library manager to be always present in memory(link-loader).
+
+### Loader and Process Manager
+
+- `ld` is a tool to invoke linker only.
+
+- when command is sent to shell for execution shall check.
+  - Is file present
+  - Is file executable 
+  - Is the file image format compatible
+
+Every object file has the following components
+
+1. Header (metadata)
+2. Image
+
+- We can use `readelf - a ./app` to look into the header of the app.
+- segmentation table of  the header contains information about organization of image.
+- loader uses header(segmentation table) to allocate space for stat and code section.
+- Note: Code segment is not necessarily contiguous.
+- Process Manager:
+  - It will instantiate the PCB(Process Control Block) and Initialize it.
+  - PCB gets added to the run/ready que of the scheduler.
+
+```mermaid
+
+graph LR
+A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
+    %%B --> C{Decision}
+    %%C -->|One| D[Result one]
+    %%C -->|Two| E[Result two]
+```
+
+- Process is a program in memory that is registered with the kernel
+- PCB in Linux is an instance of task structure struct task_struct
+  - cat /proc/< Process ID >/maps | more to see the program organisation
+
+
+
+### Types of Dynamic Linkage
+
+- Dynamic Linkage is of two types 
+  1. Load time linking
+  2. Run time Linking 
+
+- Dynamic libraries can be linked into a process address space either at load time(dynamic process initialization) or run-time
+- load-time linkage is default if application is not programmed for run-time linkage.
+- Shared objects linked at load-time remains in the address space of the process until termination.
+- A Process can link .so whenever it is needed and un-link it when it is not longer needed if the process OS is designed to support run-time linkage.
+- eg: `gcc mandl.c -o mandl -ldl`
+- The following code will load library and link it in run-time.
+
+```c
+#include <stdio.h>
+#include <dlfcn.h>
+#include <stdlib.h>
+
+int main (void)
+{
+    char * ptr;
+    void * handle;
     
+    /* STEP1: Declare a function pointer */
+    void (*fnptr) (void);
+    printf("%s: start of main\n",__func__);
+    
+    /* STEP2: Request link loader to load specific library and attach it to the address space */
+    handle = dlopen("./libtest.so", RTLD_NOW);
+    if (handle == NULL)
+    {
+        printf("Failed to load library libtest.so\n");
+        exit(2);
+    }
+    
+    /* STEP3: lookup for the address of the required function */
+    fnptr = dlsym(handle, "test");
+    
+    /* STEP4: Invoke the function trough the pointer */
+    (fnptr)();
+    
+    /* STEP5: Request link loader to unlink specific library from the address space */
+    dlclose(handle);
+}
+```
+
