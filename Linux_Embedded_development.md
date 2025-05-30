@@ -185,7 +185,7 @@
     - In dynamically loaded libraries the function pointers for the library  functions will be updates only when library is loaded  i.e during run-time.
     - Dynamic Linkages are resolved through PLT tables
     - PLT which the linker generates at build time contains references of dynamically linked library functions.
-    - Each record of a PLT is a fn pointer whose address is referred by the calling instructions in the text segment 
+    - Each record of a PLT is a function pointer whose address is referred by the calling instructions in the text segment 
       - eg: `callq 400630 < test@plt>`
     - To confirm an issue with library use the `ldd` tool.
 
@@ -280,42 +280,187 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
   2. Run time Linking 
 
 - Dynamic libraries can be linked into a process address space either at load time(dynamic process initialization) or run-time
+
 - load-time linkage is default if application is not programmed for run-time linkage.
+
 - Shared objects linked at load-time remains in the address space of the process until termination.
+
 - A Process can link .so whenever it is needed and un-link it when it is not longer needed if the process OS is designed to support run-time linkage.
+
 - eg: `gcc mandl.c -o mandl -ldl`
-- The following code will load library and link it in run-time.
 
-```c
-#include <stdio.h>
-#include <dlfcn.h>
-#include <stdlib.h>
+- `dlopen` function requires one of the below value as an argument flag:
 
-int main (void)
-{
-    char * ptr;
-    void * handle;
-    
-    /* STEP1: Declare a function pointer */
-    void (*fnptr) (void);
-    printf("%s: start of main\n",__func__);
-    
-    /* STEP2: Request link loader to load specific library and attach it to the address space */
-    handle = dlopen("./libtest.so", RTLD_NOW);
-    if (handle == NULL)
-    {
-        printf("Failed to load library libtest.so\n");
-        exit(2);
-    }
-    
-    /* STEP3: lookup for the address of the required function */
-    fnptr = dlsym(handle, "test");
-    
-    /* STEP4: Invoke the function trough the pointer */
-    (fnptr)();
-    
-    /* STEP5: Request link loader to unlink specific library from the address space */
-    dlclose(handle);
-}
-```
+  - `RTLD_NOW` : If this value is specified, or the environment variable `LD_BIND_NOW` is set to a nonempty string, all undefined symbols in the shared object  are  resolved before `dlopen()` returns. If this cannot be done, an error is returned.
+  - `RTLD_LAZY` : Perform lazy binding.  Resolve symbols only as the code that references them is executed.  If the symbol is never referenced, then it is  never  resolved.(Lazy  binding  is  performed only for function references; references to variables are always immediately bound when the shared object is loaded.) 
+  - `RTLD_DEEPBIND` : Place the lookup scope of the symbols in this shared object ahead of the global scope. This means that a self-contained object will use its  own  symbols in preference to global symbols with the same name contained in objects that have already been loaded.
 
+- The following code is an example of dynamic linkage during run-time:
+
+  **test.c**	
+
+  ```c
+  #include <stdio.h>
+  
+  void testfn(){
+  		printf("printing from test function in libtest.so\n");
+          }
+  ```
+
+  
+
+  **main.c**
+
+  ```c
+  #include <stdio.h>
+  #include <dlfcn.h>
+  #include <stdlib.h>
+  
+  int main (void){
+      
+      void * handle;
+      
+      /* STEP1: Declare a function pointer */
+      void (*fnptr) (void);
+      printf("%s: start of main\n",__func__);
+      
+      /* STEP2: Request link loader to load specific library and attach it to the address space */
+      handle = dlopen("./libtest.so", RTLD_NOW);
+      if (handle == NULL)
+      {
+          printf("Failed to load library libtest.so\n");
+          exit(2);
+      }
+      
+      /* STEP3: lookup for the address of the required function */
+      dlerror(); // clear all dl errors
+      fnptr = dlsym(handle, "testfn");
+      if (dlerror() != NULL)
+       {
+  		printf("Unable to load function test from libtest.so\n");
+          exit(2);
+       }
+  
+      /* STEP4: Invoke the function trough the pointer */
+      (fnptr)();
+      
+      /* STEP5: Request link loader to unlink specific library from the address space */
+      dlclose(handle);
+  }
+  ```
+
+  
+
+#### Steps to compiling the above program
+
+1. Generate position independent code of library source 
+
+   - eg: `gcc -c -Wall -Werror -fpic test.c -o test.o`
+
+2. Turn the library object file into a shared library. 
+
+   - eg: `gcc -shared -o libtest.so test.o`
+
+3. Compile main program which uses the libtest.so functions,  `-L`  specifies the location of library to **linker** and library argument for`libtest` will be `-ltest`    Run    `gcc -L /<path_of_library_so_file> -Wall -o main.out main.c -ltest`
+
+4. Export the library path using `export LD_LIBRARY_PATH=<LIBRARY_PATH>`  we need to do this as the library is not part of standard path like `/usr/lib`     hence **loader** will look up any patch mentioned in  `LD_LIBRARY_PATH`
+
+5. run ./main.out and the output should be as below: 
+
+   > main: start of main 
+   > printing from test function in libtest.so
+
+6. You can run the following command to know the location of the library `ldd main.out | grep test`
+
+7. Instead of specifying library path every time you want to compile or execute the program in a new shell we can add the library in a well known path  
+
+   ```bash
+   $ cp <library_path>/libtest.so /usr/lib
+   $ chmod 0755 /usr/lib/libtest.so
+   ```
+
+
+
+#### Library Dependencies
+
+- Create a shared object `libdrv.so` with following functions
+
+  **drv.c**
+
+  ```c
+  #include <stdio.h>
+  
+  void x(void){
+  		printf("\n %s \n", __func__);
+      	a();
+  }
+  
+  void y(void){
+  		printf("\n %s \n", __func__);
+  		b();
+  }
+  ```
+
+- Create a shared object from drv.c source file 
+
+  - generate library object file: `gcc -c -fpic drv.c -o drv.o`
+  - Generate `.so` from object file `gcc -shared -o libdrv.so drv.o`
+
+  
+
+- Create a dependency library libdep.so with following functions
+
+  **dep.c**
+
+  ```c
+  #include <stdio.h>
+  
+  void a(void){
+  		printf("\n %s \n", __func__);
+  }
+  
+  void b(void){
+  		printf("\n %s \n", __func__);
+  }
+  ```
+
+  **dep.h**
+
+  ```c
+  void a(void);                                                                                                                 void b(void);
+  ```
+
+  
+
+- Build instructions
+
+  - Generate object file from library source file 
+    - `gcc -c -fpic drv.c drv.o`
+    - `gcc -c -fpic dep.c dep.o`
+  - Generate object file from main file
+    - `gcc -c drv_main.c -o drv_main.o` 
+  - Generate shared library from object file 
+    - `gcc -shared -o libdep.so dep.o`
+    - `gcc -shared -o libdrv.so drv.o`
+  - Link both file`gcc -L=. -Wall -o drv_main.out drv_main.o -ldrv -ldep`
+  - export library path for loader,  `export LD_LIBRARY_PATH=<LIBRARY_PATH>` and run `./drv_main.out`		
+
+### File Systems
+
+- File system is a kernel service which manages files.
+- Files are of 2 types:
+  1. Storage File System 
+  2. Logical File System\
+- Run `cat /proc/filesystems` to see all the file systems supported in your GNU/Linux OS'
+  - `nodev` - represents logical file system
+- proc is also a logical file system the file in proc are stored in primary memory
+  - `cat /proc/meminfo`
+  - refer `man 5 proc` for additional info
+- The proc filesystem is a pseudo-filesystem which provides an interface to kernel data structures.  It is commonly mounted at /proc.
+  - `man dl` for more info on `dl`
+
+
+
+### Virtual Address Space:
+
+- CPU are access memory : cpus are configured to access a memory location through a memory controller.
