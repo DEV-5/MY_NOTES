@@ -361,7 +361,9 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
    - eg: `gcc -shared -o libtest.so test.o`
 
-3. Compile main program which uses the libtest.so functions,  `-L`  specifies the location of library to **linker** and library argument for`libtest` will be `-ltest`    Run    `gcc -L /<path_of_library_so_file> -Wall -o main.out main.c -ltest`
+3. Compile main program which uses the libtest.so functions,  `-L`  specifies the location of library to **linker** and in order to request  linking `libtest` we will be providing the argument `-ltest`
+
+   -  Run    `gcc -L <path_of_library_so_file> -Wall -o main.out main.c -ltest`
 
 4. Export the library path using `export LD_LIBRARY_PATH=<LIBRARY_PATH>`  we need to do this as the library is not part of standard path like `/usr/lib`     hence **loader** will look up any patch mentioned in  `LD_LIBRARY_PATH`
 
@@ -463,4 +465,116 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
 ### Virtual Address Space:
 
-- CPU are access memory : cpus are configured to access a memory location through a memory controller.
+- CPU are configured to access a memory location through a memory controller.
+
+- memory controller accesses memory for the CPU.
+
+  <img src="./Pictures/Linux/Virtual_memory.png" alt="Virtual Memory Layout" style="zoom: 80%;" />
+
+- Size of memory access is dependent on the size of address bus, with a 32 bit wide address bus 4GB of data can be accessed.
+
+- Memory controller is responsible for carrying out physical access operations on memory as per control instruction received on the control bus.
+
+- Memory controller falls back on address decoding circuit for resolving physical memory location corresponding to address specified by the CPU.
+
+- Address decoders are HW programmed with an address map that assign addresses to various memory components (RAM, ROM, Device Registers).
+
+- SW programs must be built and deployed into ram  using appropriate linker scripts to ensure unique address space for each program.
+
+- As number of program to be deployed increases the complexity of assigning unique address spaces for each build and ensuring that programs don't overlap with memory increases.
+
+- To enable systems to support deployment of increased no of programs without assigning unique address space at build time CPU's with  MMU virtual addresses and protected mode operations are used.
+
+- Program built with a common virtual address & deployed into memory trough a system software (OS).
+
+- System software is an OS with memory management capabilities/
+
+- OS ensures mapping of each program image to unique physical memory and generates a table of address translations which contains build time virtual addresses to physical address mapping  information (Page Table).
+
+- During program execution CPU's are configured to access address translation table for determining physical location of program data and instructions.
+
+- CPU with additional circuit called MMU can only perform virtual to physical address translation.
+
+- #### Kernel space and User space
+
+  - Virtual memory is split into two regions to achieve separation of kernel from applications. linker scripts enforce this separation during build time.
+  -  A range of address are reserved for kernel build called kernel space and another range of address are reserved to support user application is called user space.
+  - On 32 bit systems with 4GB of address space default configuration splits in 3:1 ratio 0 to 3GB for app build , 3 to 4 GB(1GB) for kernel space, kernel linker script is present in kernel space.
+
+### Stack Segment
+
+- Stack is a segment of virtual address space which is mapped to a physical memory where local data of the procedures currently in execution is stored.
+
+- Each procedure is assigned a frame with in stack segment each frame is identified with a base and TOP address
+
+- ABI provides rules on how translation must take place
+
+  #### Code Translation
+
+  - Compilers are programmed to translate source code int o appropriate assembly instructions
+
+  - Translation rules are described by ABI standard of the OS, which are programmed in to the compiler.
+
+  - The following translation assumes X86_32 bit Linux platform
+
+  - Each procedure of the source file is translated in the following order
+
+    - Identify non executable statements
+
+    - Resolve all executable statements
+
+    - Translate executable statements into there assembly instructions for the  c program below:
+
+      ```c
+      int main()
+      {
+      	int a = 10;
+      	int b = 20;
+      	int c;
+      	c = a+ b;
+      	return 0;
+      }
+      ```
+
+    - Translator creates a symbol table for variable declaration 
+
+      | Symbol Name | Type | Composition | offset address |
+      | ----------- | ---- | ----------- | -------------- |
+      | a           | int  | 4           | -12 (%ebp)     |
+      | b           | int  | 4           | -8 (%ebp)      |
+      | c           | int  | 4           | -4 (%ebp)      |
+      |             |      | Total 12    |                |
+
+      
+
+      ```c
+      int main()						//   main:				
+      {								//   pushl % ebp       ------> Preanmble
+       								//   movl %esp, %ebp   ------> Preanmble
+       								//   subl  $12, %esp
+       						
+      	int a = 10;			        //	 movl $10, -12(%esp)  
+      	int b = 20;				    //   movl $20, -8(%esp)
+      	int c;						//   movl -8(%ebp), eax 
+      	c = a+ b; // non atomic     //   movl -12(%ebp), %edx
+      								//   addl  %edx, %eax
+      								//   movl  %eax, -4(%ebp)
+      								//   movl  $0, %eax
+      	return 0;					//   movl  %ebp, %esp  ---------> leave (postamble)	
+      	                            //   popl  %ebp        ---------> exit (postamble)	
+      }
+      ```
+
+      Execution Trace:
+
+      -  CPU registers:
+        - ebp  96
+        - esp   84 
+        - eax    0
+        - edx    10
+      -  Stack segment:
+        - Value      ADDR
+        - 132  <---  96
+        - 30    <---   92 --> c
+        - 20    <---   88 --> b
+        - 10    <---   84 --> a
