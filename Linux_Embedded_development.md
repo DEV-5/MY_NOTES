@@ -49,7 +49,18 @@
 
 ### C compilation 
 
-![stages of C compilation](./Pictures/Linux/Stages_of_Compilation.png)
+```mermaid
+	graph TD
+    A[Pre-processor] 
+    B(Translator)
+    C(Assembler)
+    D(Linker)
+    E(file.out)
+A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.s -o file.o -->D -- gcc file.o -o file.out -->E
+
+```
+
+
 
 - Understanding translation would lead to writing more efficient programming.
 - `Objdump -D` (Dis assembler all flag) is used to display the information from the object files
@@ -97,6 +108,16 @@
     - System V ABI for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/sysvabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/sysvabi64/sysvabi64.rst)
     - Memtag Extension to ELF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/memtagabielf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/memtagabielf64/memtagabielf64.rst)
     - C/C++ Atomics Application Binary Interface Standard for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/atomicsabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/atomicsabi64/atomicsabi64.rst)
+    
+  - ##### ABI for the X86 Architecture
+  
+    - System V Application Binary Interface AMD64 Architecture Processor Supplement - 
+  
+      [v1.0]: https://cs61.seas.harvard.edu/site/2022/pdf/x86-64-abi-20210928.pdf	"ABI AMD64"
+  
+    - System V Application Binary Interface Intel386 Architecture Processor Supplement - 
+  
+      [v1.0]: https://www.uclibc.org/docs/psABI-i386.pdf	"ABI Intel386"
 
 ### Startup Initializer Subsystem
 
@@ -447,6 +468,8 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
   - Link both file`gcc -L=. -Wall -o drv_main.out drv_main.o -ldrv -ldep`
   - export library path for loader,  `export LD_LIBRARY_PATH=<LIBRARY_PATH>` and run `./drv_main.out`		
 
+
+
 ### File Systems
 
 - File system is a kernel service which manages files.
@@ -498,8 +521,12 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 - #### Kernel space and User space
 
   - Virtual memory is split into two regions to achieve separation of kernel from applications. linker scripts enforce this separation during build time.
+
   -  A range of address are reserved for kernel build called kernel space and another range of address are reserved to support user application is called user space.
+
   - On 32 bit systems with 4GB of address space default configuration splits in 3:1 ratio 0 to 3GB for app build , 3 to 4 GB(1GB) for kernel space, kernel linker script is present in kernel space.
+
+    
 
 ### Stack Segment
 
@@ -553,28 +580,161 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
        								//   movl %esp, %ebp   ------> Preanmble
        								//   subl  $12, %esp
        						
-      	int a = 10;			        //	 movl $10, -12(%esp)  
-      	int b = 20;				    //   movl $20, -8(%esp)
+      	int a = 10;					//	 movl $10, -12(%esp)  
+      	int b = 20;					//   movl $20, -8(%esp)
       	int c;						//   movl -8(%ebp), eax 
-      	c = a+ b; // non atomic     //   movl -12(%ebp), %edx
+      	c = a+ b; // non atomic		//   movl -12(%ebp), %edx
       								//   addl  %edx, %eax
       								//   movl  %eax, -4(%ebp)
       								//   movl  $0, %eax
       	return 0;					//   movl  %ebp, %esp  ---------> leave (postamble)	
-      	                            //   popl  %ebp        ---------> exit (postamble)	
+      								//   popl  %ebp        ---------> exit (postamble)	
       }
       ```
 
-      Execution Trace:
+      ###### Execution Trace:
 
       -  CPU registers:
         - ebp  96
         - esp   84 
         - eax    0
         - edx    10
-      -  Stack segment:
+      - Stack segment:
         - Value      ADDR
         - 132  <---  96
         - 30    <---   92 --> c
         - 20    <---   88 --> b
         - 10    <---   84 --> a
+
+  - ##### Translating a function call
+
+    ```c
+    void swap(int x, int y){
+    	
+        int tmp;
+    	
+        tmp = x;
+    	x = y;
+    	y = temp;
+    }
+    
+    int main (){
+    
+        int a,b;
+    	
+        a = 10;
+    	b = 20;
+        swap(a,b);
+    	return 0;
+    }
+    ```
+
+    
+
+    - Function call translation depends on function calling convention specified by ABI standard. Linux 32 bit x86 systems use c- calling convention as a default standard for x86 64 bit system on Linux standard call convention is default calling convention.
+
+    - The following are the steps involved as per 32 bit calling conventions.
+
+      1. Push each argument onto top of the stack starting with right most argument.
+      2. Invoke called function.
+      3. Gather return value of the called function from the eax accumulator.
+      4.  Release memory allocated for arguments.
+
+      ```c
+      int main (){							//	main:
+      										//		pushl % ebp
+          int a,b;							//		movl  % esp, ebp
+      										// 		subl  $8 , %ebp
+          a = 10;								//		movl  $10, -8 (%ebp)
+      	b = 20;								//		movl  $20, -4 (%ebp)
+          swap(a,b);							//		pushl -4 (%ebp)
+      	return 0;							//		pushl -8 (%ebp)
+          									//		call sleep
+          									//		addl $8 , %esp ;deallocating stack space for argument
+          									//		movl $0, %eax
+          									//		movl %ebp, %esp ; leave
+          									//		popl %ebp		; return
+      }
+      ```
+
+      ```c
+      void swap(int x, int y){				//	swap:
+      										//		pushl	%ebp
+          int tmp;							//		movl	%esp, ebp
+      										//		subl	$4, %esp
+          tmp = x;							//		movl	8(%ebp), %eax
+      	x = y;								//		movl	%eax, -4(%ebp)
+      	y = temp;							//		movl	12(%ebp), %eax
+          									//		movl	%eax, 12(%ebp)
+          									//		movl	-4 (%ebp), %eax
+          									//		movl	%eax, 12(%ebp)
+          									//		movl %ebp, %esp ; leave
+          									//		popl %ebp		; return
+      }
+      ```
+
+      ###### Execution Trace:
+
+      -  CPU registers:
+
+        | Register Name | Register Value |
+        | ------------- | -------------- |
+        | ebp           | 172            |
+        | esp           | 168            |
+        | eax           | 10             |
+        | eip           | 2000           |
+
+        
+
+      - Stack segment:
+
+        | Value at Address      | Stack Address |
+        | --------------------- | ------------- |
+        | 232                   | 196           |
+        | 20                    | 192           |
+        | 10                    | 188           |
+        | 20                    | 184           |
+        | 10                    | 180           |
+        | 1008 (return address) | 176           |
+        | 196                   | 172           |
+        | 10                    | 168           |
+
+        
+
+    -  `gcov`  is a great tools to understand code coverage and `gprof` can be used to see call graph and understand the compute time
+
+  #### x86_64 calling convention for Linux
+
+  - Call convention for 64 bit requires first 6 arguments to be passed through CPU accumulators, arguments beyond 6 are passed through the caller stack frame as per the ABI the following are accumulators reserved for arguments.
+    - `rdi`
+    - `rsi`
+    - `rdx`
+    - `rcx`
+    - `r8`
+    - `r9`
+  - return value are to be moved into `rax` register.
+
+### Invoking System calls:
+
+- System calls are functions in kernel code segment through which a user mode application can step into a kernel service.
+
+- Invoking a system call requires processor to jump from user mode address space of the process into kernel mode.
+
+- Local data of the system call and stack frames of the functions invoked by system call are allocated in kernel mode stack of the process.
+
+  TODO: add diagram 
+
+- ABI standard define system call invocation procedure.
+
+  #### 32 bit x86 system call invocation:
+
+  1. Move system call identifier into eax accumulator.
+  2. Starting with right most argument move each parameter onto the CPU accumulator.
+     - For 64 bit `rdi` , `rsi`, ` rdx` , `r10`, `r8`, `r9` 
+     - For 32 bit `edi`
+  3. Trigger an software interrupt on Trap vector 
+     - for 32 bit  int $0x80
+     - for 64 bit syscall
+  4. To gather return value of a system call read from `eax` (32 bit) or `rax` (64 bit).
+
+### 
