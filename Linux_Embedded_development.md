@@ -100,24 +100,29 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
   - ##### ABI for the Arm 64-bit Architecture
 
     - Procedure Call Standard for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/aapcs64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/aapcs64/aapcs64.rst)
+    
     - ELF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/aaelf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/aaelf64/aaelf64.rst)
+    
     - DWARF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/aadwarf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/aadwarf64/aadwarf64.rst)
+    
     - C++ ABI for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/cppabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/cppabi64/cppabi64.rst)
+    
     - Vector Function ABI for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/vfabia64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/vfabia64/vfabia64.rst)
+    
     - PAuth ABI Extension to ELF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/pauthabielf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/pauthabielf64/pauthabielf64.rst)
+    
     - System V ABI for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/sysvabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/sysvabi64/sysvabi64.rst)
+    
     - Memtag Extension to ELF for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/memtagabielf64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/memtagabielf64/memtagabielf64.rst)
+    
     - C/C++ Atomics Application Binary Interface Standard for the Arm 64-bit Architecture - [pdf](https://github.com/ARM-software/abi-aa/releases/download/2025Q1/atomicsabi64.pdf), [html](https://github.com/ARM-software/abi-aa/blob/c51addc3dc03e73a016a1e4edf25440bcac76431/atomicsabi64/atomicsabi64.rst)
+    
+      
     
   - ##### ABI for the X86 Architecture
   
-    - System V Application Binary Interface AMD64 Architecture Processor Supplement - 
-  
-      [v1.0]: https://cs61.seas.harvard.edu/site/2022/pdf/x86-64-abi-20210928.pdf	"ABI AMD64"
-  
-    - System V Application Binary Interface Intel386 Architecture Processor Supplement - 
-  
-      [v1.0]: https://www.uclibc.org/docs/psABI-i386.pdf	"ABI Intel386"
+    - System V Application Binary Interface **AMD64** Architecture Processor Supplement - [ABI AMD64](https://cs61.seas.harvard.edu/site/2022/pdf/x86-64-abi-20210928.pdf )
+    - System V Application Binary Interface **Intel386** Architecture Processor Supplement - [ABI Intel386](https://www.uclibc.org/docs/psABI-i386.pdf)
 
 ### Startup Initializer Subsystem
 
@@ -716,25 +721,206 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
 ### Invoking System calls:
 
-- System calls are functions in kernel code segment through which a user mode application can step into a kernel service.
+System calls are functions in kernel code segment through which a user mode application can step into a kernel service.
 
-- Invoking a system call requires processor to jump from user mode address space of the process into kernel mode.
+Invoking a system call requires processor to jump from user mode address space of the process into kernel mode.
 
-- Local data of the system call and stack frames of the functions invoked by system call are allocated in kernel mode stack of the process.
+Local data of the system call and stack frames of the functions invoked by system call are allocated in kernel mode stack of the process.
 
-  TODO: add diagram 
+TODO: add diagram 
 
-- ABI standard define system call invocation procedure.
+ABI standard define system call invocation procedure.
 
-  #### 32 bit x86 system call invocation:
+#### 32 bit x86 system call invocation:
 
-  1. Move system call identifier into eax accumulator.
-  2. Starting with right most argument move each parameter onto the CPU accumulator.
-     - For 64 bit `rdi` , `rsi`, ` rdx` , `r10`, `r8`, `r9` 
-     - For 32 bit `edi`
-  3. Trigger an software interrupt on Trap vector 
-     - for 32 bit  int $0x80
-     - for 64 bit syscall
-  4. To gather return value of a system call read from `eax` (32 bit) or `rax` (64 bit).
+1. Move system call identifier into eax accumulator.
 
-### 
+2. Starting with right most argument move each parameter onto the CPU accumulator.
+
+   - For 64 bit `rdi` , `rsi`, ` rdx` , `r10`, `r8`, `r9` 
+   - For 32 bit `edi`
+
+3. Trigger an software interrupt on Trap vector 
+
+   - for 32 bit  int $0x80
+   - for 64 bit syscall
+
+4. To gather return value of a system call read from `eax` (32 bit) or `rax` (64 bit).
+
+   ```c
+   #include <stdio.h>
+   
+   int main(){
+       int res;
+       __asm__("movl $338, %eax");
+       __asm__("int $0x80");
+       __asm__("movl %eax, -4(%ebp)");
+       printf("val returned by Syscall %d\n", res);
+       return 0;
+   }
+   ```
+
+Refer Geek for Geek tutorial : https://www.geeksforgeeks.org/introduction-of-system-call/
+
+To facilitate invocation of system call through high level language source OS vendors provide a library of functions called API (Application Program Interface).
+
+API is a function programmed to invoke a system call, it is an abstraction of assembly instructions required to invoke system calls.
+
+Since API's are OS specific any application programmed to invoke an API would not be portable.
+
+Linux System call path
+
+- User Space
+
+| Application          | Application | Application | Application |
+| -------------------- | ----------- | ----------- | ----------- |
+| **Library Language** | **Printf**  | **Malloc**  | **Fwrite**  |
+| **API**              | **Write**   | **brk**     | **Write**   |
+
+- Kernel Space
+
+| System call        | sys_write  | sys_brk          | sys_write  |
+| ------------------ | ---------- | ---------------- | ---------- |
+| **Kernel service** | **Driver** | **Buddy System** | **Driver** |
+
+
+
+
+
+### Heap Allocations:
+
+-  Heap is a segment of reserved virtual address used for run-time memory allocations.
+
+- Kernel memory manager keeps track of heap segment of heap segment of a process through memory descriptor structure (struct mm_struct).
+
+- PCB of the process contains reference to memory descriptor.
+
+- **Program brk** and **Start brk** are elements of memory descriptor which refer to heap address space.
+
+- Start brk refers to the start address of the heap and Program brk refers to the top of the heap.
+
+- In the beginning of the program  Start brk and Program brk point to the same address location.
+
+- Increasing the program break has the effect of allocating memory to the process while decreasing the break deallocates memory.
+
+- `brk()` and `sbrk()` change the location of the program break.
+
+  - `int brk(void *addr);`
+  - `void *sbrk(intptr_t increment);`
+
+- Program to show how to use brk and sbrk
+
+  ```c
+  #include <stdio.h>
+    #include <unistd.h>
+    
+    int main(void){
+        void *curr_brk, *def_brk, *new_brk;                                                                                                                                                    
+        /* Grab current program break address */
+        curr_brk = sbrk(0);
+        def_brk  = curr_brk;
+        printf("\ncurrent_brk= %p \n", curr_brk);
+        getchar();
+        /* Change the location the program break using brk(allocate 100 bytes of heap) */
+        brk(curr_brk + 100);
+        /* verify change */
+        new_brk = sbrk(0);
+        printf("new_brk= %p\n",new_brk);
+        /* Restore default location of the program break */
+        brk(def_brk);
+    }
+  ```
+
+  
+
+  #### Malloc and Free
+
+  - C Library and other high level languages libraries implement heap management algorithms these algorithm are designed to provide easier access to heap memory and random allocation and deallocation.
+
+  - Heap management algorithm provide 2 categories of function interfaces
+
+    1.  Allocation & deallocation calls (`malloc` , `calloc`, `realloc`)
+    2. Configuration and setup (`mallopt`, `malloc_start`, `malloc_info`)
+
+  - glibc heap allocation algorithm is programmed with the following configuration:
+
+    - An allocation request of 128 Kb or less is considered small block and is always allocated from heap segment
+
+    - heap is always allocated in multiples of 128 Kb.
+
+    - An allocation request greater than 128 Kb are considered large and such blocks are setup from `mmap` region of the address space.
+
+    - Allocation for `mmap` are always released back to system when they are freed by the application.
+
+    - `mmap` is the API used for `mmap` allocation by `malloc`.
+
+    - Default configurations can be altered for a specific program using `mallopt`
+
+      -  `int mallopt (int param, int value);`
+
+    - The `mallopt()` function adjusts parameters that control the behaviour of the memory allocations.
+
+    - The following are allocation related parameters
+
+      - `M_MMAP_MAX`: This parameter specifies the maximum number of allocations requests that may be simultaneously served using `mmap`. setting this parameter to Zero disables the use of `mmap`, i.e disables `mmap` for servicing large allocation requests.
+
+      - `M_MMAP_THRESHOLD`: For allocations greater than or equal to the limit specified (in bytes) by `M_MMAP_THRESHOLD` that can't be satisfied from the free list, the memory-allocation functions employ `mmap(2)` instead of increasing the program break using sbrk(2)
+
+      - `M_TOP_PAD`: This parameter defines the amount of padding to employ when calling sbrk(2) to modify the program break.
+
+        - When the program break is increased , then `M_TOP_PAD`  bytes are added to the sbrk(2) request.
+
+        - Modifying `M_TOP_PAD`  is a trade off between increase the number of system call (when the parameter is set low) and wasting unused memory at the top of the heap(when the param is set high)
+
+        - In either case, the amount of padding is always rounded to a system boundary 
+
+          - eg: `mallopt(M_TOP_PAD , 0);`
+
+          - eg: `mallopt(M_MMAP_THRESHOLD , 0);`
+
+          - Source: `linuxpro/memalloc/part4/mallopt.c`
+
+            ```c
+            #include <stdio.h>
+            #include <string.h>
+            #include <malloc.h>
+            
+            int main()
+            {
+            	int i =100;
+            	void *p, *p1;
+            
+            	mallopt(M_TOP_PAD, 0);
+            	mallopt(M_MMAP_THRESHOLD, 4096);		
+            	malloc_stats();
+            	getchar();
+            
+            	p = (void *)malloc(4096 * 2);
+            	malloc_stats();
+            	getchar();
+            
+            	free(p);
+            	malloc_stats();
+            	getchar();
+            
+            	p1 = (void *)malloc(1024);
+            	malloc_stats();
+            	getchar();
+            
+            	free(p1);
+            	malloc_stats();
+            	getchar();
+            
+            	p = (void *)malloc(4096 * 2);
+            	malloc_stats();
+            	getchar();
+            
+            	free(p);
+            	malloc_stats();
+            	getchar();
+            	return 0;
+            }
+            ```
+
+            
+
