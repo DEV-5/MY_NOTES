@@ -858,69 +858,148 @@ Linux System call path
 
       -  `int mallopt (int param, int value);`
 
-    - The `mallopt()` function adjusts parameters that control the behaviour of the memory allocations.
+  - The `mallopt()` function adjusts parameters that control the behaviour of the memory allocations.
 
-    - The following are allocation related parameters
+  - The following are allocation related parameters
 
-      - `M_MMAP_MAX`: This parameter specifies the maximum number of allocations requests that may be simultaneously served using `mmap`. setting this parameter to Zero disables the use of `mmap`, i.e disables `mmap` for servicing large allocation requests.
+    - `M_MMAP_MAX`: This parameter specifies the maximum number of allocations requests that may be simultaneously served using `mmap`. setting this parameter to Zero disables the use of `mmap`, i.e disables `mmap` for servicing large allocation requests.
 
-      - `M_MMAP_THRESHOLD`: For allocations greater than or equal to the limit specified (in bytes) by `M_MMAP_THRESHOLD` that can't be satisfied from the free list, the memory-allocation functions employ `mmap(2)` instead of increasing the program break using sbrk(2)
+    - `M_MMAP_THRESHOLD`: For allocations greater than or equal to the limit specified (in bytes) by `M_MMAP_THRESHOLD` that can't be satisfied from the free list, the memory-allocation functions employ `mmap(2)` instead of increasing the program break using sbrk(2)
 
-      - `M_TOP_PAD`: This parameter defines the amount of padding to employ when calling sbrk(2) to modify the program break.
+    - `M_TOP_PAD`: This parameter defines the amount of padding to employ when calling sbrk(2) to modify the program break.
 
-        - When the program break is increased , then `M_TOP_PAD`  bytes are added to the sbrk(2) request.
+      - When the program break is increased , then `M_TOP_PAD`  bytes are added to the sbrk(2) request.
 
-        - Modifying `M_TOP_PAD`  is a trade off between increase the number of system call (when the parameter is set low) and wasting unused memory at the top of the heap(when the param is set high)
+      - Modifying `M_TOP_PAD`  is a trade off between increase the number of system call (when the parameter is set low) and wasting unused memory at the top of the heap(when the param is set high)
 
-        - In either case, the amount of padding is always rounded to a system boundary 
+      - In either case, the amount of padding is always rounded to a system boundary 
 
-          - eg: `mallopt(M_TOP_PAD , 0);`
+        - eg: `mallopt(M_TOP_PAD , 0);`
 
-          - eg: `mallopt(M_MMAP_THRESHOLD , 0);`
+        - eg: `mallopt(M_MMAP_THRESHOLD , 0);`
 
-          - Source: `linuxpro/memalloc/part4/mallopt.c`
+        - Source: `linuxpro/memalloc/part4/mallopt.c`
 
-            ```c
-            #include <stdio.h>
-            #include <string.h>
-            #include <malloc.h>
-            
-            int main()
-            {
-            	int i =100;
-            	void *p, *p1;
-            
-            	mallopt(M_TOP_PAD, 0);
-            	mallopt(M_MMAP_THRESHOLD, 4096);		
-            	malloc_stats();
-            	getchar();
-            
-            	p = (void *)malloc(4096 * 2);
-            	malloc_stats();
-            	getchar();
-            
-            	free(p);
-            	malloc_stats();
-            	getchar();
-            
-            	p1 = (void *)malloc(1024);
-            	malloc_stats();
-            	getchar();
-            
-            	free(p1);
-            	malloc_stats();
-            	getchar();
-            
-            	p = (void *)malloc(4096 * 2);
-            	malloc_stats();
-            	getchar();
-            
-            	free(p);
-            	malloc_stats();
-            	getchar();
-            	return 0;
-            }
-            ```
+          ```c
+          #include <stdio.h>
+          #include <string.h>
+          #include <malloc.h>
+          
+          int main()
+          {
+          	int i =100;
+          	void *p, *p1;
+          
+          	mallopt(M_TOP_PAD, 0);
+          	mallopt(M_MMAP_THRESHOLD, 4096);		
+          	malloc_stats();
+          	getchar();
+          
+          	p = (void *)malloc(4096 * 2);
+          	malloc_stats();
+          	getchar();
+          
+          	free(p);
+          	malloc_stats();
+          	getchar();
+          
+          	p1 = (void *)malloc(1024);
+          	malloc_stats();
+          	getchar();
+          
+          	free(p1);
+          	malloc_stats();
+          	getchar();
+          
+          	p = (void *)malloc(4096 * 2);
+          	malloc_stats();
+          	getchar();
+          
+          	free(p);
+          	malloc_stats();
+          	getchar();
+          	return 0;
+          }
+          ```
 
-            
+          
+  
+  - Soft limit is a guide line limit which ensures no issue error occurs as long as the value is within the soft limits i.e if the value exceeds the soft limits there is a possibility of a crash.
+  
+    
+
+### Memory Alignment
+
+-  An allocation is considered to be naturally aligned if its start address is evenly divisible by the size of the variable
+
+-  When accessing N bytes of memory, the base memory address must be evenly divisible by N i.e `addr % N = 0`
+
+-  Unaligned memory access occurs when an attempt is made to read N bytes of data starting from an address that is not evenly divisible by N (i.e `addr % N != 0`)
+
+-  Some architectures are able to perform unaligned memory access transparently, but there is usually a significant performance cost.
+
+-  Some architectures raise processor exceptions with required metadata. Kernel exceptions with handlers are programmed to correct the unaligned access, at significant cost to performance .
+
+-  `Malloc`, `calloc` and `realloc` are programmed to return 8 byte aligned memory on 32 bit system and 16 byte aligned on 64 bit system.
+
+-  When dynamic memory of specific alignment is needed `posix_memalign` is to be used in place of `malloc`
+
+   - `int posix_memalign(void **memptr, size_t alignment, size_t size);`
+
+-  The function `posix_memalign`allocates  size  bytes  and  places  the address of the allocated memory in `*memptr`.  The address of the allocated memory will be a multiple of alignment, which must be a power of two and a multiple of `sizeof(void *)`.
+
+   
+
+### Virtual Memory Operations:
+
+- Kernel virtual memory subsystem carries out demand paging for efficient use of available physical memory.
+
+- Demand paging is a process of identifying unused / `LRU` (least recently used) allocations and swapping out data in such memory onto a storage called swap disk.
+
+- Memory is released for other needs once all data is swapped out of `LRU` pages.
+
+- when application initiate an access operations on swapped out memories a **page fault**(software interrupt) us triggered by the cpu
+
+- Kernel page fault handler resolves page fault exception by swapping in application data from back store (swap) into a free memory block and reactivating  mapping data.
+
+- Swap in and swap out activities will impact application execution performance.
+
+- Applications can verify state of allocated memory through an API `minicore` 
+
+  - `int mincore(void addr[.length], size_t length, unsigned char *vec);`
+
+-  `mincore()`  returns  a vector that indicates whether pages of the calling process's virtual memory are resident in core (RAM), and so will not cause a disk access (page fault) if referenced. The kernel returns residency information about the pages starting at the address `addr`, and continuing for length bytes.
+
+- The  `vec`  argument  must point to an array containing at least (length+PAGE_SIZE-1) / PAGE_SIZE bytes.  On return, the least significant bit of each byte will be set if the corresponding page is currently resident in memory, and be clear otherwise.
+
+- example program for `mincore` is as below
+
+  ```c
+  #include <unistd.h>
+  #include <sys/mman.h>
+  
+  int main()
+  {
+      int ret;
+      void * ptr;
+      unsigned char mincore_vec[5];
+      size_t page_size;
+      size_t size;
+      size_t page_index;
+      
+      /* get arch specific page size */
+      page_size = getpagesize();
+      size = page_size - size * 5;
+      /* Allocate 20 K bytes (mmap region) */
+      posix_memalign(&ptr, page_size, size);
+      mlock(ptr, size);
+      
+      /* fill buffer with zero */
+      memset(ptr, 0, size);
+      /*verify physical memory map */
+      ret = 
+  }
+  ```
+
+  - there
 
