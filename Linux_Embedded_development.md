@@ -958,13 +958,13 @@ Linux System call path
 
 - Memory is released for other needs once all data is swapped out of `LRU` pages.
 
-- when application initiate an access operations on swapped out memories a **page fault**(software interrupt) us triggered by the cpu
+- when application initiate an access operations on swapped out memories a **page fault**(software interrupt) is triggered by the CPU.
 
-- Kernel page fault handler resolves page fault exception by swapping in application data from back store (swap) into a free memory block and reactivating  mapping data.
+- Kernel page fault handler resolves page fault exception by swapping in application data from back store (swap) into a free memory block and reactivating mapping data.
 
 - Swap in and swap out activities will impact application execution performance.
 
-- Applications can verify state of allocated memory through an API `minicore` 
+- Applications can verify state of allocated memory through an API `mincore` 
 
   - `int mincore(void addr[.length], size_t length, unsigned char *vec);`
 
@@ -975,31 +975,117 @@ Linux System call path
 - example program for `mincore` is as below
 
   ```c
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
+  #include <fcntl.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
   #include <unistd.h>
   #include <sys/mman.h>
   
   int main()
   {
-      int ret;
-      void * ptr;
-      unsigned char mincore_vec[5];
-      size_t page_size;
-      size_t size;
-      size_t page_index;
-      
-      /* get arch specific page size */
-      page_size = getpagesize();
-      size = page_size - size * 5;
-      /* Allocate 20 K bytes (mmap region) */
-      posix_memalign(&ptr, page_size, size);
-      mlock(ptr, size);
-      
-      /* fill buffer with zero */
-      memset(ptr, 0, size);
-      /*verify physical memory map */
-      ret = 
+  	int ret;
+  	void *ptr;
+  	unsigned char mincore_vec[5];
+  	size_t page_size;
+  	size_t size;
+  	size_t page_index;
+  
+  	/*get arch specific page size */
+  	page_size = getpagesize();
+  	printf("page size = %d\n", page_size);
+  	size = page_size * 5;
+  
+  	/* Allocate 20k buffer(mmap region) */
+  	posix_memalign(&ptr, page_size, size);
+  
+  //	mlock(ptr, size);	
+  	/* fill buffer with 0's */
+  	memset(ptr,0,size);
+  	
+  	getchar();
+  	/* verify physical memory map */
+  	ret = mincore(ptr, size, mincore_vec);
+  	if(ret<0)
+  		perror("mincore");
+  
+  	/* print results */
+  	for (page_index = 0; page_index < 5 ; page_index++) {
+  		if (mincore_vec[page_index] & 1) 
+  			printf("page %lu active\n", (unsigned long)page_index);
+  		else
+  			printf("page %lu not active\n", (unsigned long)page_index);
+  	}
+  	/* release buffer */
+  	munmap(ptr, size);
+  	return 0;
   }
   ```
 
-  - there
+- A process can enable and disable demand paging on a specifying memory allocation or address space with `mlock()` and `mlockall()`
+
+- `mlock()` and `mlockall()` respectively lock part of all the calling process's virtual address into RAM, preventing that memory from being paged into swap area.
+
+### File IO Operations
+
+​	<img src="/home/vdev/My_Git_Repos/MY_NOTES/Pictures/Linux/LinuxFileSystem.png" alt="Linux File System Architecture" style="zoom:50%;" />
+
+- #### 
+
+  #### File Systems
+
+  - File systems is a kernel service implemented to manage files.
+  - Storage file systems are designed to manage persistent files over a storage media to manage a storage device file system require storage partition to be initialised with a volume layout.
+  - A volume compromises of following block of storage boot blocks, FS blocks and data blocks
+    1. **Boot Blocks**: The very first partition is called a boot block, regular file storage operations will not access boot block.
+    2. **FS Blocks**: A set block reserved for file system meta data.
+    3. Data Blocks: Blocks used for storing regular file data.
+  - **insert image here** 
+  - `fdisk` is a dialog-driven program for creation and manipulation of partition tables. 
+    - eg: `fdisk -l`
+
+  #### Mount
+
+  - Mount is an operation of booting FS blocks of a disk volume into memory.
+  - Mount operation requires compatible file system to be specified.
+  - Linux kernel supports various filesystem usually a multitude of file systems eg: EXT 2,3,4 , VFAT ,etc.
+    - eg: `mount -t < file system name > < src disc> < mount point >`
+  - mount point is a folder which is accessible
+
+  #### Kernel File IO Architecture
+
+  - Kernel file IO subsystem is designed with an objective of providing apps with an common file API trough which file access operations can be initiated on any file of root FS (irrespective of file system to which file belongs to).
+  - **insert image here** 
+  - Virtual File system is an abstraction layer for all file system services.
+  - This layer implements common file operations so user mode apps can initiate file IO access operations.
+  - `VFS` is programmed to dynamically switch app file IO requests to an appropriate file system service.
+  - presence of `vfs` allows kernel to abstract complexity of various services from app layers.
+  - **insert image here** 
+  - **insert image here** 
+  - how vfs resolves common api call to a perticular file system (conceptual flow)
+    - open() ->| sys_open() - > vfs_open() -> fs_open()
+  - int open (const char * path, ...)
+    - Step 1: validate physical presence of file
+    - Step 2: Invoke `vfs_open`
+  - int vfs_open(const char * path, ...)
+    - Step 1: Locate specified file `vnode` in `vfs` tree (root file system)
+    - Step 2: Find file system specific `inode` for the file (through `vfs_vnode` field) and invoke the open operation bound to `inode`.
+      - fptr = vnode->fs_node->fops->open()
+      - int a = fptr(); /* invoking file system's open call */
+      - if (a == 0) then perform rest of the steps
+    - Step 3: Allocate instance of struct file.
+    - Step 4: Initialize file object with attribute and address of file system operations (Fops)
+    - Step 5: map address of file object to caller process file descriptor table.
+    - Step 6: return offset number (file descripto table) to which file descriptor table is mapped 
+    - Step 7: else return to a.
+  
+  #### Open and close file descriptor operations
+  
+  - 
+  
+  
+
+
 
