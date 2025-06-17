@@ -1064,28 +1064,191 @@ Linux System call path
   - presence of `vfs` allows kernel to abstract complexity of various services from app layers.
   - **insert image here** 
   - **insert image here** 
-  - how vfs resolves common api call to a perticular file system (conceptual flow)
-    - open() ->| sys_open() - > vfs_open() -> fs_open()
-  - int open (const char * path, ...)
+  - how `vfs` resolves common API call to a particular file system (conceptual flow)
+    - `open()` ->| `sys_open()` - > `vfs_open()` -> `fs_open()`
+  - `int open (const char * path, ...)`
     - Step 1: validate physical presence of file
     - Step 2: Invoke `vfs_open`
-  - int vfs_open(const char * path, ...)
+  - `int vfs_open(const char * path, ...)`
     - Step 1: Locate specified file `vnode` in `vfs` tree (root file system)
     - Step 2: Find file system specific `inode` for the file (through `vfs_vnode` field) and invoke the open operation bound to `inode`.
-      - fptr = vnode->fs_node->fops->open()
-      - int a = fptr(); /* invoking file system's open call */
+      - `fptr = vnode->fs_node->fops->open()`
+      - `int a = fptr(); /* invoking file system's open call */`
       - if (a == 0) then perform rest of the steps
     - Step 3: Allocate instance of struct file.
     - Step 4: Initialize file object with attribute and address of file system operations (Fops)
     - Step 5: map address of file object to caller process file descriptor table.
-    - Step 6: return offset number (file descripto table) to which file descriptor table is mapped 
+    - Step 6: return offset number (file descriptor table) to which file descriptor table is mapped 
     - Step 7: else return to a.
   
   #### Open and close file descriptor operations
   
-  - 
+  - File descriptor is a resource owned by the process it can exist until the process initiates a close() call or process termination.
+  - File descriptor contains application file access attribute and pointer to file system operations
+  - Since File descriptor (FD) is local to a process open() and close() are considered file descriptor operations.
   
   
+  
+  The Following are common file API:
+  
+  - `int open(const char *pathname, int flags);`
+  
+  - `int open(const char *pathname, int flags, mode_t mode);`
+  
+    - mode means permission
+  
+  - `open()` returns a file descriptor, a small non negative, integer for use in subsequent system calls `read(2)`, `write(2)`, `lseek(2)`, `fnctl(2)`, etc.
+  
+  - The file descriptor returned by a successful call will be the lowest numbered file descriptor not currently open for the process.
+  
+    - `ssize_t read( int fd, void * buf, size_t count);`
+  
+  - read() attempts to read up to count bytes from file descriptor fd into the buffer starting at buf.
+  
+  - OUT parameters: `params` provided to kernel to output data. out `params` must never be `const`
+  
+    - `ssize_t write(size_t count; int fd, const void buf[count], size_t count);`
+  
+  - write() writes up to count bytes from the buffer pointer.
+  
+  - `int close(int fd);`
+  
+  - close() closes a file descriptor, so that it no longer refers to any file and may be reversed.
+  
+  - example: `Linuxpro/io/part7/copy.c`
+  
+    ```c
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <unistd.h>
+    #include <sys/stat.h>
+    #include <fcntl.h>
+    #include <string.h>
+    
+    #define BUF_SIZE 1024
+    
+    int main(int argc, char *argv[])
+    {
+    	int inputFd, outputFd, openFlags;
+    	mode_t filePerms;
+    	ssize_t numRead;
+    	char buf[BUF_SIZE];
+    
+    	if (argc != 3 || strcmp(argv[1], "--help") == 0) {
+    		fprintf(stderr, "%s old-file new-file\n", argv[0]);
+    		exit(1);
+    	}
+    
+    	/* Open input and output files */
+    
+    	inputFd = open(argv[1], O_RDONLY);
+    	if (inputFd == -1) {
+    		fprintf(stderr, "error opening source file");
+    		exit(1);
+    	}
+    
+    
+    	openFlags = O_CREAT | O_WRONLY | O_TRUNC;
+    	filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;	/* rw-rw-rw- */
+    
+    	outputFd = open(argv[2], openFlags, filePerms);
+    	if (outputFd == -1) {
+    		fprintf(stderr, "error opening source file");
+    		exit(1);
+    	}
+    	getchar();
+    
+    	/* Transfer data until we encounter end of input or an error */
+    	while ((numRead = read(inputFd, buf, BUF_SIZE)) > 0)
+    		if (write(outputFd, buf, numRead) != numRead) {
+    			perror("write ");
+    			exit(1);
+    		}
+    	if (numRead == -1) {
+    		perror("read: ");
+    		exit(1);
+    	}
+    
+    	close(inputFd);
+    	close(outputFd);
+    
+    	return 0;
+    }
+    ```
+    
+    
+  
+  Read / Write operations:
+  
+  - `read()` --> | `sys_read()` --> `fs_read`
+  
+  -  `ssize_t vfs_read(size_t count, int fd, void buf[count], size_t count);`
+  
+    - **Setup 1**: Identify data region of file on disk(inode).
+    - **Setup 2**: Lookup IO cache for for requested data if found.
+    - **Setup 3**: Allocate buffer (new IO cache block).
+    - **Setup 4**: Instruct storage driver to transfer file data to buffer.
+    - **Setup 5**: Transfer data to caller application buffer (user space)
+    - **Setup 6**: Return number of bytes transferred to user buffer
+  
+  - `write()` --> | `sys_write()` --> `fs_write`
+  
+  -  `ssize_t vfs_write(size_t count, int fd, void buf[count], size_t count);`
+  
+    - **Setup 1**: Check if request needs appending fresh data and make necessary changes to in-core inode (reserve new disk block).
+    - **Setup 2**: Identify buffer of the specific file in the IO cache and if needed allocate fresh buffers.
+    - **Setup 3**:  Update IO cache with new data.
+    - **Setup 4**: Schedule disk sync.
+    - **Setup 5**: Transfer data to caller application buffer (user space)
+    - **Setup 6**: Return number of bytes transferred to user cache.
+  
+  - File system Read write operations are by default implemented as write back operations (i.e read/write call return data \ update data to io cache of the file).
+  
+  - Most FS are designed to provide alternative modes of IO which are to be enabled by the programs
+  
+    1. Synchronised IO : This mode can be enabled through FD flag flad O_SYNC. R/W operation are executed in a write through mode  (return status after Read/ Write operation on disk is complete.)
+  
+       - IO operations take longer to complete which directly impacts application execution time but ensures reliability.
+  
+    2. Vectored IO: This mode provides applications with a R/W interface which allows multiple buffers to be used.
+  
+       ```c
+       #include < stdio.h>
+       
+       int main()
+       {
+           int fd;
+           void * buff[4];
+           int i;
+           
+           fd = open("./testvec", O_CREAT | O_RDWR | O_EXCL, 0666);
+           /* Allocates 4 buffers */
+           for (int i =0 ; i < 4; i++)
+               buff[i] = malloc(2048);
+         	/* Populate data into buffers */
+           for(int i =0; i < 4; i++)
+               strcpy((char*) buf[i], "abcdefghijklmnopqrstuvwxyz0123456789");
+           /* declare an array of 4 instances of struct */
+           iovec struct iovec_io [4];
+           /* intialize address of buffer into each instance (one to one mapping) */
+           for (int i = 0; i < 4; i++){
+               io[i].iov_base = buf[i];
+               io[i].iov_len = 2024;
+           }
+           /* Setup C: intialize write op */
+           writev(fd, io, 4);
+           return 0;
+       }
+       ```
+       
+    3. Read-ahead IO:
+    
+       1. Read-ahead is a feature supported by most filesystem through which app programs can request FS to pre-fetch specified file data into IO cache even before the process needs it.
+       2. Programs can initiate read ahead operations though any of the following methods
+       3. readahead() populates the page cache with data for a file so that subsequent reads from that file will not block on disk IO.
+       4. To get the size of the file 
+          1. int stat(const char *path, struct stat* buff);
+          2. int Fstat(int fd, struct stat * buf);
 
 
 
