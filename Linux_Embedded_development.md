@@ -2,16 +2,14 @@
 
 ------
 
-## Introduction to Linux 
+### Introduction to Linux 
 
 ------
-
-### Definition:
 
 - Linux is a member of the UNIX family of operating systems.
 - Precisely speaking, the term Linux refers just to the kernel developed by Linus Torvalds and others. However, the term Linux is commonly used to mean the kernel, plus a wide range of other software (tools and libraries) that together make a complete operating system. 
 
-###  History:
+####  History:
 
 - Unix (1969)
   - The UNIX system was first implemented in 1969 on a Digital PDP-7 minicomputer by Ken Thompson at Bell Laboratories (part of AT&T). The operating system drew many ideas, as well as its punned name, from the earlier MULTICS system. By
@@ -491,7 +489,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
 
 
-### Virtual Address Space:
+## Virtual Address Space:
 
 - CPU are configured to access a memory location through a memory controller.
 
@@ -533,7 +531,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
     
 
-### Stack Segment
+## Stack Segment
 
 - Stack is a segment of virtual address space which is mapped to a physical memory where local data of the procedures currently in execution is stored.
 
@@ -706,7 +704,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
         
 
-    -  `gcov`  is a great tools to understand code coverage and `gprof` can be used to see call graph and understand the compute time
+    -  `gcov`  is a great tools to understand code coverage and `gprof` can be used to see call graph and understand the compute time.
 
   #### x86_64 calling convention for Linux
 
@@ -719,7 +717,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
     - `r9`
   - return value are to be moved into `rax` register.
 
-### Invoking System calls:
+## Invoking System calls:
 
 System calls are functions in kernel code segment through which a user mode application can step into a kernel service.
 
@@ -766,7 +764,7 @@ To facilitate invocation of system call through high level language source OS ve
 
 API is a function programmed to invoke a system call, it is an abstraction of assembly instructions required to invoke system calls.
 
-Since API's are OS specific any application programmed to invoke an API would not be portable.
+Since `APIs` are OS specific any application programmed to invoke an API would **not be portable**.
 
 Linux System call path
 
@@ -787,7 +785,7 @@ Linux System call path
 
 
 
-### Heap Allocations:
+## Heap Allocations:
 
 -  Heap is a segment of reserved virtual address used for run-time memory allocations.
 
@@ -950,7 +948,7 @@ Linux System call path
 
    
 
-### Virtual Memory Operations:
+## Virtual Memory Operations:
 
 - Kernel virtual memory subsystem carries out demand paging for efficient use of available physical memory.
 
@@ -1028,227 +1026,495 @@ Linux System call path
 
 - `mlock()` and `mlockall()` respectively lock part of all the calling process's virtual address into RAM, preventing that memory from being paged into swap area.
 
-### File IO Operations
+  
+
+## File IO Operations
 
 ​	<img src="/home/vdev/My_Git_Repos/MY_NOTES/Pictures/Linux/LinuxFileSystem.png" alt="Linux File System Architecture" style="zoom:50%;" />
 
-- #### 
 
-  #### File Systems
 
-  - File systems is a kernel service implemented to manage files.
-  - Storage file systems are designed to manage persistent files over a storage media to manage a storage device file system require storage partition to be initialised with a volume layout.
-  - A volume compromises of following block of storage boot blocks, FS blocks and data blocks
-    1. **Boot Blocks**: The very first partition is called a boot block, regular file storage operations will not access boot block.
-    2. **FS Blocks**: A set block reserved for file system meta data.
-    3. Data Blocks: Blocks used for storing regular file data.
-  - **insert image here** 
-  - `fdisk` is a dialog-driven program for creation and manipulation of partition tables. 
-    - eg: `fdisk -l`
+- File systems is a kernel service implemented to manage files.
+- Storage file systems are designed to manage persistent files over a storage media to manage a storage device file system require storage partition to be initialised with a volume layout.
+- A volume compromises of following block of storage boot blocks, FS blocks and data blocks
+  1. **Boot Blocks**: The very first partition is called a boot block, regular file storage operations will not access boot block.
+  2. **FS Blocks**: A set block reserved for file system meta data.
+  3. Data Blocks: Blocks used for storing regular file data.
+- **insert image here** 
+- `fdisk` is a dialog-driven program for creation and manipulation of partition tables. 
+  - eg: `fdisk -l`
 
-  #### Mount
+#### Mount
 
-  - Mount is an operation of booting FS blocks of a disk volume into memory.
-  - Mount operation requires compatible file system to be specified.
-  - Linux kernel supports various filesystem usually a multitude of file systems eg: EXT 2,3,4 , VFAT ,etc.
-    - eg: `mount -t < file system name > < src disc> < mount point >`
-  - mount point is a folder which is accessible
+- Mount is an operation of booting FS blocks of a disk volume into memory.
+- Mount operation requires compatible file system to be specified.
+- Linux kernel supports various filesystem usually a multitude of file systems eg: EXT 2,3,4 , VFAT ,etc.
+  - eg: `mount -t < file system name > < src disc> < mount point >`
+- mount point is a folder which is accessible
 
-  #### Kernel File IO Architecture
+### Kernel File IO Architecture
 
-  - Kernel file IO subsystem is designed with an objective of providing apps with an common file API trough which file access operations can be initiated on any file of root FS (irrespective of file system to which file belongs to).
-  - **insert image here** 
-  - Virtual File system is an abstraction layer for all file system services.
-  - This layer implements common file operations so user mode apps can initiate file IO access operations.
-  - `VFS` is programmed to dynamically switch app file IO requests to an appropriate file system service.
-  - presence of `vfs` allows kernel to abstract complexity of various services from app layers.
-  - **insert image here** 
-  - **insert image here** 
-  - how `vfs` resolves common API call to a particular file system (conceptual flow)
-    - `open()` ->| `sys_open()` - > `vfs_open()` -> `fs_open()`
-  - `int open (const char * path, ...)`
-    - Step 1: validate physical presence of file
-    - Step 2: Invoke `vfs_open`
-  - `int vfs_open(const char * path, ...)`
-    - Step 1: Locate specified file `vnode` in `vfs` tree (root file system)
-    - Step 2: Find file system specific `inode` for the file (through `vfs_vnode` field) and invoke the open operation bound to `inode`.
-      - `fptr = vnode->fs_node->fops->open()`
-      - `int a = fptr(); /* invoking file system's open call */`
-      - if (a == 0) then perform rest of the steps
-    - Step 3: Allocate instance of struct file.
-    - Step 4: Initialize file object with attribute and address of file system operations (Fops)
-    - Step 5: map address of file object to caller process file descriptor table.
-    - Step 6: return offset number (file descriptor table) to which file descriptor table is mapped 
-    - Step 7: else return to a.
+- Kernel file IO subsystem is designed with an objective of providing apps with an common file API trough which file access operations can be initiated on any file of root FS (irrespective of file system to which file belongs to).
+- **insert image here** 
+- Virtual File system is an abstraction layer for all file system services.
+- This layer implements common file operations so user mode apps can initiate file IO access operations.
+- `VFS` is programmed to dynamically switch app file IO requests to an appropriate file system service.
+- presence of `vfs` allows kernel to abstract complexity of various services from app layers.
+- **insert image here** 
+- **insert image here** 
+- how `vfs` resolves common API call to a particular file system (conceptual flow)
+  - `open()` ->| `sys_open()` - > `vfs_open()` -> `fs_open()`
+- `int open (const char * path, ...)`
+  - Step 1: validate physical presence of file
+  - Step 2: Invoke `vfs_open`
+- `int vfs_open(const char * path, ...)`
+  - Step 1: Locate specified file `vnode` in `vfs` tree (root file system)
+  - Step 2: Find file system specific `inode` for the file (through `vfs_vnode` field) and invoke the open operation bound to `inode`.
+    - `fptr = vnode->fs_node->fops->open()`
+    - `int a = fptr(); /* invoking file system's open call */`
+    - if (a == 0) then perform rest of the steps
+  - Step 3: Allocate instance of struct file.
+  - Step 4: Initialize file object with attribute and address of file system operations (Fops)
+  - Step 5: map address of file object to caller process file descriptor table.
+  - Step 6: return offset number (file descriptor table) to which file descriptor table is mapped 
+  - Step 7: else return to a.
+
+#### Open and close file descriptor operations
+
+- File descriptor is a resource owned by the process it can exist until the process initiates a close() call or process termination.
+- File descriptor contains application file access attribute and pointer to file system operations
+- Since File descriptor (FD) is local to a process open() and close() are considered file descriptor operations.
+
+
+
+The Following are common file API:
+
+- `int open(const char *pathname, int flags);`
+
+- `int open(const char *pathname, int flags, mode_t mode);`
+
+  - mode means permission
+
+- `open()` returns a file descriptor, a small non negative, integer for use in subsequent system calls `read(2)`, `write(2)`, `lseek(2)`, `fnctl(2)`, etc.
+
+- The file descriptor returned by a successful call will be the lowest numbered file descriptor not currently open for the process.
+
+  - `ssize_t read( int fd, void * buf, size_t count);`
+
+- read() attempts to read up to count bytes from file descriptor `fd` into the buffer starting at `buf`.
+
+- OUT parameters: `params` provided to kernel to output data. out `params` must never be `const`
+
+  - `ssize_t write(size_t count; int fd, const void buf[count], size_t count);`
+
+- write() writes up to count bytes from the buffer pointer.
+
+- `int close(int fd);`
+
+- close() closes a file descriptor, so that it no longer refers to any file and may be reversed.
+
+- example: `Linuxpro/io/part7/copy.c`
+
+  ```c
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <unistd.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
+  #include <string.h>
   
-  #### Open and close file descriptor operations
+  #define BUF_SIZE 1024
   
-  - File descriptor is a resource owned by the process it can exist until the process initiates a close() call or process termination.
-  - File descriptor contains application file access attribute and pointer to file system operations
-  - Since File descriptor (FD) is local to a process open() and close() are considered file descriptor operations.
+  int main(int argc, char *argv[])
+  {
+  	int inputFd, outputFd, openFlags;
+  	mode_t filePerms;
+  	ssize_t numRead;
+  	char buf[BUF_SIZE];
+  
+  	if (argc != 3 || strcmp(argv[1], "--help") == 0) {
+  		fprintf(stderr, "%s old-file new-file\n", argv[0]);
+  		exit(1);
+  	}
+  
+  	/* Open input and output files */
+  
+  	inputFd = open(argv[1], O_RDONLY);
+  	if (inputFd == -1) {
+  		fprintf(stderr, "error opening source file");
+  		exit(1);
+  	}
   
   
+  	openFlags = O_CREAT | O_WRONLY | O_TRUNC;
+  	filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;	/* rw-rw-rw- */
   
-  The Following are common file API:
+  	outputFd = open(argv[2], openFlags, filePerms);
+  	if (outputFd == -1) {
+  		fprintf(stderr, "error opening source file");
+  		exit(1);
+  	}
+  	getchar();
   
-  - `int open(const char *pathname, int flags);`
+  	/* Transfer data until we encounter end of input or an error */
+  	while ((numRead = read(inputFd, buf, BUF_SIZE)) > 0)
+  		if (write(outputFd, buf, numRead) != numRead) {
+  			perror("write ");
+  			exit(1);
+  		}
+  	if (numRead == -1) {
+  		perror("read: ");
+  		exit(1);
+  	}
   
-  - `int open(const char *pathname, int flags, mode_t mode);`
+  	close(inputFd);
+  	close(outputFd);
   
-    - mode means permission
+  	return 0;
+  }
+  ```
   
-  - `open()` returns a file descriptor, a small non negative, integer for use in subsequent system calls `read(2)`, `write(2)`, `lseek(2)`, `fnctl(2)`, etc.
   
-  - The file descriptor returned by a successful call will be the lowest numbered file descriptor not currently open for the process.
-  
-    - `ssize_t read( int fd, void * buf, size_t count);`
-  
-  - read() attempts to read up to count bytes from file descriptor fd into the buffer starting at buf.
-  
-  - OUT parameters: `params` provided to kernel to output data. out `params` must never be `const`
-  
-    - `ssize_t write(size_t count; int fd, const void buf[count], size_t count);`
-  
-  - write() writes up to count bytes from the buffer pointer.
-  
-  - `int close(int fd);`
-  
-  - close() closes a file descriptor, so that it no longer refers to any file and may be reversed.
-  
-  - example: `Linuxpro/io/part7/copy.c`
-  
-    ```c
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <unistd.h>
-    #include <sys/stat.h>
-    #include <fcntl.h>
-    #include <string.h>
-    
-    #define BUF_SIZE 1024
-    
-    int main(int argc, char *argv[])
-    {
-    	int inputFd, outputFd, openFlags;
-    	mode_t filePerms;
-    	ssize_t numRead;
-    	char buf[BUF_SIZE];
-    
-    	if (argc != 3 || strcmp(argv[1], "--help") == 0) {
-    		fprintf(stderr, "%s old-file new-file\n", argv[0]);
-    		exit(1);
-    	}
-    
-    	/* Open input and output files */
-    
-    	inputFd = open(argv[1], O_RDONLY);
-    	if (inputFd == -1) {
-    		fprintf(stderr, "error opening source file");
-    		exit(1);
-    	}
-    
-    
-    	openFlags = O_CREAT | O_WRONLY | O_TRUNC;
-    	filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;	/* rw-rw-rw- */
-    
-    	outputFd = open(argv[2], openFlags, filePerms);
-    	if (outputFd == -1) {
-    		fprintf(stderr, "error opening source file");
-    		exit(1);
-    	}
-    	getchar();
-    
-    	/* Transfer data until we encounter end of input or an error */
-    	while ((numRead = read(inputFd, buf, BUF_SIZE)) > 0)
-    		if (write(outputFd, buf, numRead) != numRead) {
-    			perror("write ");
-    			exit(1);
-    		}
-    	if (numRead == -1) {
-    		perror("read: ");
-    		exit(1);
-    	}
-    
-    	close(inputFd);
-    	close(outputFd);
-    
-    	return 0;
-    }
-    ```
-    
-    
-  
-  Read / Write operations:
-  
-  - `read()` --> | `sys_read()` --> `fs_read`
-  
-  -  `ssize_t vfs_read(size_t count, int fd, void buf[count], size_t count);`
-  
-    - **Setup 1**: Identify data region of file on disk(inode).
-    - **Setup 2**: Lookup IO cache for for requested data if found.
-    - **Setup 3**: Allocate buffer (new IO cache block).
-    - **Setup 4**: Instruct storage driver to transfer file data to buffer.
-    - **Setup 5**: Transfer data to caller application buffer (user space)
-    - **Setup 6**: Return number of bytes transferred to user buffer
-  
-  - `write()` --> | `sys_write()` --> `fs_write`
-  
-  -  `ssize_t vfs_write(size_t count, int fd, void buf[count], size_t count);`
-  
-    - **Setup 1**: Check if request needs appending fresh data and make necessary changes to in-core inode (reserve new disk block).
-    - **Setup 2**: Identify buffer of the specific file in the IO cache and if needed allocate fresh buffers.
-    - **Setup 3**:  Update IO cache with new data.
-    - **Setup 4**: Schedule disk sync.
-    - **Setup 5**: Transfer data to caller application buffer (user space)
-    - **Setup 6**: Return number of bytes transferred to user cache.
-  
-  - File system Read write operations are by default implemented as write back operations (i.e read/write call return data \ update data to io cache of the file).
-  
-  - Most FS are designed to provide alternative modes of IO which are to be enabled by the programs
-  
-    1. Synchronised IO : This mode can be enabled through FD flag flad O_SYNC. R/W operation are executed in a write through mode  (return status after Read/ Write operation on disk is complete.)
-  
-       - IO operations take longer to complete which directly impacts application execution time but ensures reliability.
-  
-    2. Vectored IO: This mode provides applications with a R/W interface which allows multiple buffers to be used.
-  
+
+#### Read / Write file descriptor operations
+
+- `read()` --> | `sys_read()` --> `fs_read`
+
+-  `ssize_t vfs_read(size_t count, int fd, void buf[count], size_t count);`
+
+  - **Step 1**: Identify data region of file on disk(inode).
+  - **Step 2**: Lookup IO cache for for requested data if found.
+  - **Step 3**: Allocate buffer (new IO cache block).
+  - **Step 4**: Instruct storage driver to transfer file data to buffer.
+  - **Step 5**: Transfer data to caller application buffer (user space).
+  - **Step 6**: Return number of bytes transferred to user buffer.
+
+- `write()` --> | `sys_write()` --> `fs_write`
+
+-  `ssize_t vfs_write(size_t count, int fd, void buf[count], size_t count);`
+
+  - **Step 1**: Check if request needs appending fresh data and make necessary changes to in-core inode (reserve new disk block).
+  - **Step 2**: Identify buffer of the specific file in the IO cache and if needed allocate fresh buffers.
+  - **Step 3**:  Update IO cache with new data.
+  - **Step 4**: Schedule disk sync.
+  - **Step 5**: Transfer data to caller application buffer (user space)
+  - **Step 6**: Return number of bytes transferred to user cache.
+
+- File system Read/write operations are by default implemented as write back operations (i.e read/write call return data update data to IO cache of the file).
+
+- Most FS are designed to provide alternative modes of IO which are to be enabled by the programs
+
+  1. ##### Synchronised IO
+
+     - This mode can be enabled through FD flag O_SYNC. R/W operation are executed in a write through mode  (return status after Read/ Write operation on disk is complete.)
+
+     - IO operations take longer to complete which directly impacts application execution time but ensures reliability.
+
+  2. ##### Vectored IO
+
+     - This mode provides applications with a R/W interface which allows multiple buffers to be used.
+
+     ```c
+     #include <stdio.h>
+     #include <sys/stat.h>
+     #include <fcntl.h>
+     #include <string.h>
+     #include <sys/uio.h>
+     
+     int main()
+     {
+         int fd;
+         void * buff[4];
+         int i;
+         
+         fd = open("./testvec", O_CREAT | O_RDWR | O_EXCL, 0666);
+         /* Allocates 4 buffers */
+         for (int i = 0 ; i < 4; i++)
+             buff[i] = malloc(2048);
+       	/* Populate data into buffers */
+         for(int i =0; i < 4; i++)
+             strcpy((char*) buf[i], "abcdefghijklmnopqrstuvwxyz0123456789");
+         /* declare an array of 4 instances of struct */
+         iovec struct io[4];
+         /* intialize address of buffer into each instance (one to one mapping) */
+         for (int i = 0; i < 4; i++){
+             io[i].iov_base = buf[i];
+             io[i].iov_len = 2024;
+         }
+         /* Setup C: intialize write op */
+         writev(fd, io, 4);
+         return 0;
+     }
+     ```
+
+  3. ##### Read-ahead IO:
+
+     1. Read-ahead is a feature supported by most filesystem through which app programs can request FS to pre-fetch specified file data into IO cache even before the process needs it.
+     2. Programs can initiate read ahead operations though any of the following methods
+     3. `readahead()` populates the page cache with data for a file so that subsequent reads from that file will not block on disk IO.
+     4. To get the size of the file 
+        1. `int stat(const char *path, struct stat* buff);`
+        2. `int fstat(int fd, struct stat * buf);`
+
+     ```mermaid
+     	graph TD
+     	title[<u>I/O Architecture</u>]
+         title-->A
+         style title fill:#FFF,stroke:#FFF
+         linkStyle 0 stroke:#FFF,stroke-width:0;
+     
+         A[VFS] 
+         B(FileSystems)
+         C(IO Cache / Paged Cache)
+         D(Block Driver)
+         E(HW Driver)
+         A<-->B <--> C <--> D <--> E
+     ```
+
+     1. `int posix_fadvise(int fd, off_t offset, off_t len, int advice);`
+
+     2. Program can use `posix_fadvice()` to announce an intention to access file data in a specific pattern in the future, thus allowing the kernel to perform appropriate optimisation.
+
+     3. The following are permissible values for advise:
+
+        -  `POSIX_FADV_NORMAL`: Default (read Block wise)
+
+        - `POSIX_FADV_SEQUENTIAL` : The app expects to access the specified data sequential file system will attempt to maximise read ahead.
+
+        - `POSIX_FADV_RANDOM` : Specifies that the application expects to access the specified data in a random order.
+
+        - `POSIX_FADV_NOREUSE` : Specifies that the application expects to access the specified data once and then not reuse it there after.
+
+        - `POSIX_FADV_WILLNEED` : Specifies that the application expects to access the specified data in the near future.
+
+        - `POSIX_FADV_DONTNEED` : Specifies that the application expects that it will not access the specified data in the near future.
+
+        - NOTE: The advice is not binding it merely constitutes an expectation on behalf of the application
+
+        - eg: `linuxpro/io/part1/readahead.c`
+
+          ```c
+          /*
+           * Team : IDST
+           * Version : 1.0
+          */
+          
+          
+          /* ToDo:
+           * 	1. add code to caliberate system time spent on io calls
+           * 	
+          */
+          #include<stdio.h>
+          #include<fcntl.h>
+          #include<sys/types.h>
+          #include<sys/stat.h>
+          #include<stdlib.h>
+           void main()
+          {
+          	char buf[30];
+          	int fd,rev;
+          
+          	
+          	if( (fd = open("read.txt", O_RDWR | O_CREAT | O_EXCL, 0666)) > 0)
+          	{	
+          		printf("\n open Failed:\n");
+          		exit(0);
+          	}
+          	else
+          		printf("\n Open sucessfully");
+          
+          
+          /*	posix_fadvise(fd, 0 , 20, POSIX_FADV_NORMAL);	 Ok with default read_ahead */
+          	
+          	rev = posix_fadvise(fd, 0 , 20, POSIX_FADV_SEQUENTIAL); // Enable full read_ahead 
+          	if(rev!=0)
+          		perror("posix_fadvise : ");
+          
+          /*	posix_fadvise(fd, 0 , 20, POSIX_FADV_RANDOM);  Disable read_ahead */
+          	
+          	
+          	if( read(fd,buf,1000) > 0)
+          	{
+          		printf("\n read error\n");
+          		exit(0);
+          	}
+          	printf("\n The read  msg : %s\n", buf);
+          	close(fd);
+          
+          }
+          
+          ```
+
+          
+
+  4. ##### Direct IO
+
+     - This mode of IO allows applications to setup user mode buffer as an IO cache for a specified file.
+     - Storage driver is instructed to perform direct fetch operations from disk onto user buffer. 
+     - Setup procedure
+       1.  Turn on `O_DIRECT` bit of the file descriptor. This flag will cause the user buffer passed as argument to read to be considered as file cache.
+          - `Fd = open("./testfile", O_READONLY | O_DIRECT);`
+       2. Setup file system block aligned buffer, only such allocations are suitable for file cache. (`fstat()` returns filesystem block size).
+          - `int posix_memalign(void **memptr, size_t alignment, size_t size);`
+          - eg: `ret = posix_memalign(&buff, allignment, size * 8);`
+       3. Initiate read on the buffer for direct transfer.
+          - eg: `numhead = read(fd, buf, size);`
+          - **Note**: when write API is used with direct IO buffer, FS updates the buffer with specified data and schedule disc sync.
+       4. If app is programmed to directly modify the buffer through pointer then such changes should be manually synchronised.
+       5. POSIX API `fsync()` initialises a flush of IO cache buffer onto disc.
+       6. `fsync()` transfers ('flushes') all modified in-core data of the file referred by the file descriptor to the disc device. It also flushes meta data information associates with the file(see stat(2)).
+       7. Direct IO is preferred in application with multiple threads to access.
+
+  5. ##### Memory Mapped I/O
+
+     - This mode of IO is supported by most file systems and it allows FS to map kernel IO cache of a file to access virtual address space (`MMAP` segment).
+
+     - `mmap()` creates a new mapping in the virtual address space of the calling process. The start address for the new mapping is specified in `addr`. 
+
+       - `void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);`
+
        ```c
-       #include < stdio.h>
+       #include <sys/mman.h>
+       #include <fcntl.h>
+       #include <stdlib.h>
+       #include <stdio.h>
+       #include <string.h>
        
        int main()
        {
            int fd;
-           void * buff[4];
-           int i;
            
-           fd = open("./testvec", O_CREAT | O_RDWR | O_EXCL, 0666);
-           /* Allocates 4 buffers */
-           for (int i =0 ; i < 4; i++)
-               buff[i] = malloc(2048);
-         	/* Populate data into buffers */
-           for(int i =0; i < 4; i++)
-               strcpy((char*) buf[i], "abcdefghijklmnopqrstuvwxyz0123456789");
-           /* declare an array of 4 instances of struct */
-           iovec struct iovec_io [4];
-           /* intialize address of buffer into each instance (one to one mapping) */
-           for (int i = 0; i < 4; i++){
-               io[i].iov_base = buf[i];
-               io[i].iov_len = 2024;
+           fd = open("./newfile", O_CREAT|O_RDWR, 0666);
+           if (fd<0){
+               perror("error: open");
+               exit(1);
            }
-           /* Setup C: intialize write op */
-           writev(fd, io, 4);
+           posix_fallocate(fd, 0, 4092*2);
+           void *fileb = mmap(0, (4092 * 2), PROT_WRITE|PROT_READ, MAP_SHARED, fd, 0);
+           /* block code here */
+           getchar();
+           memset(fileb, 'c', 4092 * 2);
+           getchar();
+           munmap(fileb, 4092 * 2);
+           getchar();
            return 0;
        }
-       ```
        
-    3. Read-ahead IO:
-    
-       1. Read-ahead is a feature supported by most filesystem through which app programs can request FS to pre-fetch specified file data into IO cache even before the process needs it.
-       2. Programs can initiate read ahead operations though any of the following methods
-       3. readahead() populates the page cache with data for a file so that subsequent reads from that file will not block on disk IO.
-       4. To get the size of the file 
-          1. int stat(const char *path, struct stat* buff);
-          2. int Fstat(int fd, struct stat * buf);
+       ```
+     
+     - If address is null, the kernel chooses the address at which to create the mapping this is the most portable method of creating a new mapping. If `addr` is not null, then the kernel takes it as a hint about where to place the mapping.
+     
+     -   `int mprotect(void * addr, size_t len, int prot);`
+     
+     - `mprotect()` changes protection from the calling process's memory pages containing any part of the address range in the interval (`addr, addr + len - 1`) `addr` must be aligned to a page boundary.
+     
+     - code : `linux/io/part3/mmap2.c`
+     
+       ```c
+       /* Shows how to use remap sys call
+       Version : 1.0
+       Author : Team -C
+       Note : All modern OS supports memory mapping of files.
+       */
+       #include<stdlib.h>
+       # include <unistd.h>
+       # include <sys/types.h>
+       # include <sys/mman.h>
+       # include <fcntl.h>
+       # include <stdio.h>
+       # include <errno.h>
+       #define _GNU_SOURCE
+       
+       int main()
+       {
+       
+       	int fd,i;
+       	unsigned char *filedata= NULL,*temp;
+       	fd = open("install.log",O_RDWR);
+       	filedata = (char *) mmap((void*)0,60,PROT_READ|PROT_WRITE,\
+       			 MAP_SHARED,fd,0);	
+       	if(filedata == NULL){
+       		perror("Maping Failed");
+       		exit(1);
+       	}
+       	// now we can access the content of the file as if it is part of
+       	// our process starting from the memory pointed by filedata.
+       	temp = filedata;
+       	for(i=0;i<60;i++,filedata++)
+       		*filedata = (char)(i+65);
+       
+       	if(mremap((void *)temp,60,70, 1)==MAP_FAILED)
+       		perror("mreamp : ");
+       	for(i=1;i<=10;i++,filedata++)
+       		*filedata = '*';
+       	if(msync(temp,70,MS_SYNC)!=0)
+       		perror("msync : ");
+       	
+       	i = munmap(temp,70);
+       	if( i != 0)
+       		printf(" failed to unmap\n");
+       }
+       ```
+     
+     - eg: `filep = mmap(0, (8192), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);`
+     
+     - eg: `ret = mprotect(filep, 4096, PROT_READ | PROT_EXEC);`
+     
+     - eg: `ret = mprotect(filep+4096, 4096, PROT_READ | PROT_WRITE);`
 
+- **All physical memory is managed as an IO cache when program executable is loaded into IO cache, system loader maps regions of programs IO cache into virtual address space as `code`, `data` and `bss` (block symbol start) segment. **
 
+- when shared objects are loaded the IO cache, the shared object is mapped into address space of process which link with the shared object.
 
+- IO cache which are unused from file caching are referred to as **anonymous buffers**.
+
+- Such buffers are used for handling dynamic memory allocations (`stack`, `heap`, `mmap`).
+
+  - run time code uses `mmap` of anonymous for allocating `stack` , `heap`, `mmap`
+
+- Applications can allocate anonymous `mmap` 
+
+  - eg: `filedata = (char *) mmap((void *) 0, 4096, PROTO_READ|PROTO_WRITE, <AP_ANONYMOUS|MAP_SHARED, -1, 0);`
+
+- Commands to  try  `pmap < PID >` and `strace`
+
+  
+
+## Process Management
+
+Process Management subsystem in kernel are composed of the following
+
+1. Process initialization & representations
+
+   - System loader(process initialization)
+   -  Process
+
+2. Process CPU schedule
+
+   - Generic scheduling algorithm.
+   - Scheduling priorities and priority queues.
+
+3. Job control / Event managment
+
+   - notification of events
+   - process triggered events
+   - system triggered events
+   - providing default event handlers and even queues (process level)
+
+   #### Signal APIs
+
+   - Signals are asynchronous messages delivered to a process or a group of process by process manager.
+
+     ```mermaid
+     flowchart TD
+         B{Signals <64>}
+         B .->|General Purpose signals| C[EVENT NOTIFICATIONS <32>]
+         B .->|Real Time Signals | E[ PROCESS COMMUNICATION <32> ]
+     
+     ```
+
+     ##### Event Notifications
+
+     
+
+     
