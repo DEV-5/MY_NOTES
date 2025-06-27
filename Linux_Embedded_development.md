@@ -124,7 +124,7 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
 
 ### Startup Initializer Subsystem
 
-- Bios or boot loader are responsible to load Kernel into user space
+- BIOS or boot loader are responsible to load Kernel into user space
 
 - Core startup initializer subsystems:  Run during system startup are responsible for system init.
 
@@ -952,7 +952,7 @@ Linux System call path
 
 - Kernel virtual memory subsystem carries out demand paging for efficient use of available physical memory.
 
-- Demand paging is a process of identifying unused / `LRU` (least recently used) allocations and swapping out data in such memory onto a storage called swap disk.
+- Demand SIGTERMpaging is a process of identifying unused / `LRU` (least recently used) allocations and swapping out data in such memory onto a storage called swap disk.
 
 - Memory is released for other needs once all data is swapped out of `LRU` pages.
 
@@ -1182,7 +1182,7 @@ The Following are common file API:
 
 -  `ssize_t vfs_read(size_t count, int fd, void buf[count], size_t count);`
 
-  - **Step 1**: Identify data region of file on disk(inode).
+  - **Step 1**: Identify data region of file on disk(`inode`).
   - **Step 2**: Lookup IO cache for for requested data if found.
   - **Step 3**: Allocate buffer (new IO cache block).
   - **Step 4**: Instruct storage driver to transfer file data to buffer.
@@ -1202,9 +1202,9 @@ The Following are common file API:
 
 - File system Read/write operations are by default implemented as write back operations (i.e read/write call return data update data to IO cache of the file).
 
-- Most FS are designed to provide alternative modes of IO which are to be enabled by the programs
+- Most File systems are designed to provide alternative modes of IO which are to be enabled by the programs
 
-  1. ##### Synchronised IO
+  1. ##### Synchronized IO
 
      - This mode can be enabled through FD flag O_SYNC. R/W operation are executed in a write through mode  (return status after Read/ Write operation on disk is complete.)
 
@@ -1273,7 +1273,7 @@ The Following are common file API:
 
      1. `int posix_fadvise(int fd, off_t offset, off_t len, int advice);`
 
-     2. Program can use `posix_fadvice()` to announce an intention to access file data in a specific pattern in the future, thus allowing the kernel to perform appropriate optimisation.
+     2. Program can use `posix_fadvice()` to announce an intention to access file data in a specific pattern in the future, thus allowing the kernel to perform appropriate optimization.
 
      3. The following are permissible values for advise:
 
@@ -1497,24 +1497,434 @@ Process Management subsystem in kernel are composed of the following
 3. Job control / Event managment
 
    - notification of events
+   
    - process triggered events
-   - system triggered events
-   - providing default event handlers and even queues (process level)
+- system triggered events
+  
+- providing default event handlers and even queues (process level)
+  
+  
 
-   #### Signal APIs
+### Signal APIs
 
-   - Signals are asynchronous messages delivered to a process or a group of process by process manager.
+- Signals are asynchronous messages delivered to a process or a group of process by process manager.
 
-     ```mermaid
-     flowchart TD
-         B{Signals <64>}
-         B .->|General Purpose signals| C[EVENT NOTIFICATIONS <32>]
-         B .->|Real Time Signals | E[ PROCESS COMMUNICATION <32> ]
-     
-     ```
+- Process management (PM) supports 64 signals each identified with through unique constant.
 
-     ##### Event Notifications
+  ```mermaid
+  flowchart TD
+      B{Signals <64>}
+      B .->|General Purpose signals| C[EVENT NOTIFICATIONS <32>]
+      B .->|Real Time Signals | E[ PROCESS COMMUNICATION <32> ]
+  
+  ```
 
-     
+  ##### Event Notifications
 
-     
+  - Job control signals are used for triggering state change or delivering state change information. 
+
+  - you can use `kill -l` to now all the signals that your system supports.
+
+  - The  first  numeric value in each table row shows the signal number on x86, ARM, and most other architectures; the second value is for Alpha and SPARC; the third is for MIPS; and the last is for PARISC.  A dash (-) denotes that a signal is absent on the corresponding architecture.
+
+    ```wiki
+       Signal      x86/ARM       Alpha/   MIPS   PARISC
+                   most others   SPARC
+       ─────────────────────────────────────────────────────────────────
+       SIGHUP           1           1       1       1
+       SIGINT           2           2       2       2
+       SIGQUIT          3           3       3       3
+       SIGILL           4           4       4       4
+       SIGTRAP          5           5       5       5
+       SIGABRT          6           6       6       6
+       SIGIOT           6           6       6       6
+       SIGBUS           7          10      10      10
+       SIGEMT           -           7       7      -
+       SIGFPE           8           8       8       8
+       SIGKILL          9           9       9       9
+       SIGUSR1         10          30      16      16
+       SIGSEGV         11          11      11      11
+       SIGUSR2         12          31      17      17
+       SIGPIPE         13          13      13      13
+       SIGALRM         14          14      14      14
+       SIGTERM         15          15      15      15
+       SIGSTKFLT       16          -       -        7
+       SIGCHLD         17          20      18      18
+       SIGCLD           -          -       18      -
+       SIGCONT         18          19      25      26
+       SIGSTOP         19          17      23      24
+       SIGTSTP         20          18      24      25
+       SIGTTIN         21          21      26      27
+       SIGTTOU         22          22      27      28
+       SIGURG          23          16      21      29
+       SIGXCPU         24          24      30      12
+       SIGXFSZ         25          25      31      30
+       SIGVTALRM       26          26      28      20
+       SIGPROF         27          27      29      21
+       SIGWINCH        28          28      20      23
+       SIGIO           29          23      22      22
+       SIGPOLL                                           Same as SIGIO
+       SIGPWR          30         29/-     19      19
+       SIGINFO          -         29/-     -       -
+       SIGLOST          -         -/29     -       -
+       SIGSYS          31          12      12      31
+       SIGUNUSED       31          -       -       31
+    ```
+
+  - Terminating an active process (1,2,3,9,15) - (`SIGHUP`, `SIGINT`, `SIGQUIT`, `SIGKILL`, `SIGTERM` )
+
+  - Asynchronous I\O : Delivered by kernel services to indicate the status of IO on a resource (23, 29 ) - (`SIGURG`, `SIGIO`, `SIGPOLL`)
+
+  - Timers: Timers are events delivered to a process on expiry of a specific time quantum measured on  a chosen clock.  (14, 26, 27) - (`SIGALRM`, `SIGVTALRM`, `SIGPROF`).
+
+  - Error reporting (4, 5, 6, 6, 7, 8, 11, 13, 16, 24, 25) - (`SIGILL`, `SIGTRAP`, `SIGABRT`, `SIGIOT`, `SIGBUS`, `SIGFPE`, `SIGSEGV`, `SIGPIPE`, `SIGSTKFLT`,  `SIGXCPU`, `SIGXFSZ`).
+
+  - Signals (34–64) `SIGRTMIN` to `SIGRTMAX` (Real-time Signals): Usage is  Reserved for real-time user-defined signals.
+
+    Purpose is to Customizable signals for real-time applications.
+
+  ```mermaid
+  flowchart TD
+      B["Source"]
+      subgraph 1
+      B --generation-->C[Signal Subsystem]
+      C --delivery-->D[destination]
+      D -->E[process]
+      end
+      
+      subgraph 2
+      B-->F[Process]
+      B-->G[Exception Handler]
+      B-->H(Kernel services)
+      end						
+  ```
+
+  ​	
+
+  - A signal is considered to be generated if the source entity rises a request.
+
+  - A signal is considered to be delivered with the receiver  process is initialized.
+
+  - Signal generation might be followed by instant delivery of it but there may also be a possibility signal subsystem defers delivery of signal to later time.
+
+  - Any of the following might cause signal delivery to be deferred:
+
+    1. Receiver process is found to be handling previous occurrence of same signal.
+    2. Receiver process was found to be in uninterpretable wait state.
+    3. Receiver process has explicitly blocked specified signal.
+
+  - Undelivered signals are queued in the task structure (PCB) of the receiver process.
+
+  - A process can setup its response for a signal through any one of the following methods:
+
+    1. Kernel provides default signal handler
+    2. Application specific signal handler function 
+    3. Ignore signal.
+
+  - Addresses of responses routines are maintained in the task structure as part of signal handler tables.
+
+    - `stty -a` will list key combo signals.
+    - man 7 signal 
+
+  - setting up a signal handler API :
+
+    - typedef void (* sighandler_t) (int);
+    - setting up signal handler using `sighandler_t signal(int signum, sighandler_t handler);`
+
+  - sample code:
+
+    - `signal(SIGINT, SIG_IGN); /* to ignore signal */`
+
+      ```c
+      #include <stdio.h>
+      #include <signal.h>
+      
+      void handler (int signum){
+      		static unsigned int sigcounter;
+      		printf("%s: handler involved counter set to %d \n", __func__, ++sigcounter);
+      }
+      
+      int main(){
+              printf("app start\n");
+          	signal(SIGINT, handler); /* set user handler for signal 2 */
+          	// signal(SIGINT, SIG_DFL); /* set default kernel handler for signal 2 */
+      		printf("configured handler for SIGINT (ctr + c)\n");
+      		getchar();
+      		return 0;
+      }
+      ```
+
+      
+
+  - **`sigaction`**
+
+    - `int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *restrict oact);`
+
+      ```c
+      #include <signal.h>
+      #include <string.h>
+      #include <stdio.h>
+      
+      void handler (int signum){
+      	static unsigned int sigcounter;
+      	printf("%s: handler involved counter set to %d \n", __func__, ++sigcounter);
+      }
+      
+      int main(){
+      	struct sigaction act;
+      	memset(&act, 0, sizeof(act)); /* Install signal handlers */
+      	act.sa_handler = handler;
+      	sigaction(SIGINT, &act, NULL); /* providing null as previous handler info is not fetched */
+      	getchar();
+      }
+      ```
+
+  - `Sigaction` provides attribute flags which can be assigned while setting up handler.
+
+  - `SA_NODEFER` :  Don't prevent the signal from being received from with in it own signal handler (this flag turns off signal Que for the  specified handler).
+
+  - `SA_RESETHAND` : Restore the signal action to the default upon entry to the signal handler.
+
+  - Process Manager (PM) categories wait state into two types
+
+    1. `TASK_INTERRUPTIBLE` `(0x0001)` : A process put into this wait state can be interrupted through signals. (occurrence of a signal on such a process will cause the process to wake up and respond to the signal).
+    2. `TASK_UNINTERRUPTIBLE` `(0x0002)` : A process in this wait state cannot be interrupted any signal at generated is queued.
+
+  - Kernel services are programmed to choose appropriate wait state to block user mode calling content.
+
+  - Blocking system calls be interrupted by signals, such system calls will not resume on completion of signal handler.
+
+  - `SA_RESTART` : Provide behavior compatible with BSD signal semantics by making certain system calls restartable across signals.
+
+  - `SA_ONSTACK` : Call the signal handler on a alternative signal stack provided by signal stack(2). If an alternative stack is not available, the default stack will be considered.
+
+  - sample code:
+
+    ```c
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <signal.h>
+    
+    void handler (int signum){
+    		static unsigned int sigcounter;
+    		printf("%s: handler involved counter set to %d \n", __func__, ++sigcounter);
+    }
+    
+    int main(){
+    	stack_t sigstack;
+    	sigstack.ss_sp = malloc(SIGSTKSZ);
+    	if(sigstack.ss_sp == NULL){
+    		perror("malloc \n");
+        		exit(EXIT_FAILURE);
+    	}
+    	sigstack.ss_size = SIGSTKSZ;
+    	sigstack.ss_flags = 0;
+    
+    	if(sigaltstack(&sigstack, NULL) == -1){
+        		perror("sigstack \n");
+        		exit(EXIT_FAILURE);
+    	}
+     	
+    	struct sigaction sa;
+    	sa.sa_flags = SA_ONSTACK;
+    	sa.sa_handler = handler;      /* Address of a signal handler */
+       	sigemptyset(&sa.sa_mask);
+        	if (sigaction(SIGINT, &sa, NULL) == -1) {
+      		perror("sigaction");
+            	exit(EXIT_FAILURE);
+        	}
+    	getchar();
+    }
+    ```
+
+  - Signal handler are preempted by occurrence of other signal.
+
+  -  Sig-action provides a variable (sa_mask) through which chosen signals can be blocked during execution of a priority handler.
+
+  - sample code:
+
+    ```c
+    #include <stdio.h>
+    #include <signal.h>
+    #include <string.h>
+    
+    void handler (int signum){
+    		static unsigned int sigcounter;
+    		printf("%s: handler involved counter set to %d \n", __func__, ++sigcounter);
+    		getchar();
+    		printf("%s: exiting handler\n", __func__);
+    }
+    
+    int main(){
+    	struct sigaction act;
+    	sigset_t sigmask;
+    
+    	memset(&act, 0, sizeof(act));
+    	sigemptyset(&sigmask);
+    	sigaddset(&sigmask, SIGINT);
+    	sigaddset(&sigmask, SIGTERM);
+    	/* Install signal handler */
+    	act.sa_handler = handler;
+    	act.sa_mask    = sigmask;
+    	sigaction(SIGQUIT, &act, NULL);
+    		printf("%s: before getchar()\n", __func__);
+    	getchar();
+    		printf("%s: after getchar()\n", __func__);
+    	while(1);
+    		printf("%s: after while(1)\n", __func__);
+    }
+    
+    ```
+
+  - `int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset);`
+
+  - `sigprocmask()` is used to fetch and/or change the signal mask of the calling thread. The signal mask is the set of signals who's delivery is currently blocked from the caller.
+
+  - sample code
+
+    ```c
+    #include <signal.h>
+    #include <stdio.h>
+    
+    int main (){
+        sigset_t s_set;
+        sigemptyset(&s_set);
+        sigaddset(&s_set, 62);
+        sigaddset(&s_set, 4);
+        sigprocmask(SIG_BLOCK|SIG_SETMASK, &s_set, NULL);
+        getchar();
+    }
+    ```
+
+  - Each occurrence of a real time signal is queued and delivered.
+
+  - To examine access the current list of blocked signals
+
+    ```c
+    #include <stdio.h>
+    #include <signal.h>
+    
+    int main(){
+    	sigset_t s;
+    	//sigaddset(&s_set, SIGINT);
+        	sigprocmask(SIG_BLOCK, NULL, &s);
+        	int res = sigismember(&s, SIGINT);
+    	int i = SIGINT;
+        	if (res)
+            	printf("Signal %d is blocked \n",i);
+    	else
+            	printf("Signal %d is not blocked \n", i);
+    	getchar();
+        	sigemptyset(&s);
+    	sigaddset(&s, SIGINT);
+    	sigprocmask(SIG_BLOCK|SIG_SETMASK, &s, NULL);
+        	sigemptyset(&s);
+    	sigprocmask(SIG_BLOCK, NULL, &s);
+        	res = sigismember(&s, SIGINT);
+        	if (res)
+            	printf("Signal %d is blocked \n",i);
+    	else
+            	printf("Signal %d is not blocked\n", i);
+    	getchar();
+    }
+    ```
+
+  - A process can append or override blocked signals without `SIG_SETMASK`.  if `SIG_SETMASK` is passed the signal will be overwritten.
+
+    ```c
+    #include <stdio.h>
+    #include <signal.h>
+    
+    int main(){
+        sigset_t s_set;
+        sigaddset(&s_set, 2);
+        sigprocmask(SIG_BLOCK, &s_set, NULL);
+        sigemptyset(&s_set);
+        sigaddset(&s_set, 4);
+        sigprocmask(SIG_BLOCK, &s_set, NULL);
+        /* Both signal 2 and signal 4 will be blocked for this process */
+        getchar();
+    }
+    ```
+
+  - A process is not allowed disposition on signal 9 (`SIGKILL`) and signal 19 (`SIGSTOP`).
+
+  - `int sigwaitinfo(const sigset_t *restrict set, siginfo_t *restrict info);`
+
+  - `int sigtimedwait(const sigset_t *restrict set, siginfo_t *restrict info, const struct timespec *restrict timeout);`
+
+  - `sigwaitinfo()` suspends execution of the calling thread until one of the signals is set in pending (If one of the signals is set is already pending for the calling thread, `sigwaitinfo()` will return immediately.)
+
+  - `sigwaitinfo()` removes the signals from the set of pending signals and return the signal number.
+
+  - code to handle alarm signal synchronously
+
+    ```c
+    #include <stdio.h>
+    #include <signal.h>
+    #include <unistd.h>
+    
+    int main(){
+        sigset_t waitset;
+        siginfo_t info;
+        /* Let's disable async handlers and enable signal queue */
+        sigemptyset(&waitset);
+        sigaddset(&waitset, SIGALRM);
+        sigprocmask(SIG_BLOCK, &waitset, NULL);
+        alarm(5);
+        // timestamp("before sigwaitinfo()");
+        /* Wait for alarm to arrive
+         * Step 1: Block until specified signals arrive into pending list 
+         * Step 2: When any signal mentioned in the set occurs, return with all meta-data describing signal's occurrence
+         */
+        results = sigwaitinfo(&waitset, &info);
+        if (results < 0)
+            printf("signal wait info failed !!!\n");
+        /* got the alarm */
+        printf("sigwaitinfo() returned from signal %d  \n", results);
+    }
+    ```
+
+  - `sigqueue` - queue a signal and data process
+
+  - `int sigqueue(pid_t pid, int sig, const union sigval value);`
+
+  - `sigqueue()` sends the signal specified in signal to the process whose process id  is specified in `pid` argument.
+
+  - The value argument is used to specify an accompanying item of data (either an integer or a pointer value) to be sent with the signal, and has the following type:
+
+    ```c
+    union sigval {
+        int   sival_int;
+        void *sival_ptr;
+    };
+    ```
+
+    
+
+    ## Concurrent Applications
+
+    Applications programmed to start with a single sequence of instructions but are capable ... span dynamic execution context which can concurrently execute are called multi thread \ concurrent applications.
+
+    ```mermaid
+    flowchart TD
+        A["concurrency"]
+        C[Kernel Suported Treads]
+        D[process \n\n address space\n + \n PCB]
+        G[[Linux threads using clone]]
+        H[[unix threads using fork]]
+        E[Light Weight process \n\n code \n + \n Stack \n+ \n PCB]
+        
+        A .->B[Thread object \n + \n code \n + \n stack]
+        A .->C
+        subgraph User Level Thread
+        B .-> F[["posix thread implemented using pthread create"]]
+        end
+        
+        subgraph  
+        C .-> D .-> H
+        C .-> E .-> G
+        end 
+    ```
+    
+    
