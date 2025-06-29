@@ -26,20 +26,20 @@
   <img src="./Pictures/Linux/GNULinux.jpg" style="zoom:67%;" />
 
   - In 1991, Linus Torvalds, a Finnish student at the University of Helsinki, was inspired to write an operating system for his Intel 80386 PC.
-  - Inspired by Minix, a small UNIX-like operating system kernel Torvalds started on a project to create an efficient, full-featured UNIX kernel to run on the 386. Over a few months, Torvalds developed a basic kernel that allowed him to compile and run various GNU programs. Then, on
+  - Inspired by `Minix`, a small UNIX-like operating system kernel Torvalds started on a project to create an efficient, full-featured UNIX kernel to run on the 386. Over a few months, Torvalds developed a basic kernel that allowed him to compile and run various GNU programs. Then, on
     October 5, 1991, Torvalds requested the help of other programmers, making the following now much-quoted announcement of version 0.02 of his kernel in the comp.os.minix
-  - Like most free software projects, Linux follows a release-early, release-often model, so that new kernel revisions appear frequently (sometimes even daily). As the Linux user base increased, the release model was adapted to decrease disruption to existing users. Specifically, following the release of Linux 1.0, the kernel developers adopted a kernel version numbering scheme with each release numbered x.y.z: x representing a major version, y a minor version within that major version, and z a revision of the minor version (minor improvements and bug fixes).
-  - As a general goal, Linux (i.e., kernel, glibc, and tool) development aims to conform to the various UNIX standards, especially POSIX and the Single UNIX Specification.
+  - Like most free software projects, Linux follows a release-early, release-often model, so that new kernel revisions appear frequently (sometimes even daily). As the Linux user base increased, the release model was adapted to decrease disruption to existing users. Specifically, following the release of Linux 1.0, the kernel developers adopted a kernel version numbering scheme with each release numbered `x.y.z: x` representing a major version, y a minor version within that major version, and z a revision of the minor version (minor improvements and bug fixes).
+  - As a general goal, Linux (i.e., kernel, `glibc`, and tool) development aims to conform to the various UNIX standards, especially POSIX and the Single UNIX Specification.
 
 
 
 ### Man page Section Numbers
 
-- 2 for system API   eg: man 2 open
+- 2 for system API   eg: `man 2 open`
 
-- 3 for Library Functions  eg: man 3 fopen
+- 3 for Library Functions  eg: `man 3 fopen`
 
-- 7 for Subsystems and kernel components  eg: man 7 tcp
+- 7 for Subsystems and kernel components  eg: `man 7 tcp`
 
 - run `man man` to know more about the man sections
 
@@ -54,7 +54,9 @@
     C(Assembler)
     D(Linker)
     E(file.out)
-A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.s -o file.o -->D -- gcc file.o -o file.out -->E
+    subgraph	
+	A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.s -o file.o -->D -- gcc file.o -o file.out -->E
+	end
 
 ```
 
@@ -69,18 +71,18 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
   - eg: `gcc -E -v a.c -o a.i`
 - 
 - GCC initially runs con-fig script which verifies dependencies
-- cc1 is the tool for compiling and pre-processing 
+- `cc1` is the tool for compiling and pre-processing 
 - Compilation involves pre processor, translator and assembler.
 - Build involves linking.
 - Binary are two types **Relocatable** Binary and **Executable** Binary.
 - In UNIX/Linux the preferred binary format is **ELF**
   - **[Executable and Linkable Format PDF](./PDFs/ELF_Format.pdf)**
-- In Windows the preferred binary format is **COFF**
-- GCC on windows has different assembler and linker to generate coff
+- In Windows the preferred binary format is **`COFF`**
+- GCC on windows has different assembler and linker to generate `coff`
 - we can take a `app.s` file (assembly file) generated in Linux and use it to generate a executable in windows
 - Relocatable binary only has address offsets, linker **assigns** load addresses to object file (instruction relocation, procedure relocation and function call relocation)
 - Linker appends run time routines \ bootstrap code. optionally resolving library call relocation
-- Run time code **initialises** the heap section and stack section.
+- Run time code **initializes** the heap section and stack section.
 - Run time code also provides command line arguments to main `_start`(constructor) `_fini` (destructor)
 - Run time code is always OS specific
 - [How main in executed in Linux](https://linuxgazette.net/issue84/hawk.html)
@@ -89,7 +91,7 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
 
 ### Application Binary Interface (ABI)
 
-- An application binary interface (ABI) is a set of rules specifying how a binary executable should exchange information with some service (e.g., the kernel or a library) at run time. Among other things, an ABI specifies which registers and stack locations are used to exchange this information, and what meaning is attached to the exchanged values. Once compiled for a particular ABI, a binary executable should be able to run on any system presenting the same ABI.
+- An application binary interface (ABI) is a set of rules specifying how a binary executable should exchange information with some service (eg, the kernel or a library) at run time. Among other things, an ABI specifies which registers and stack locations are used to exchange this information, and what meaning is attached to the exchanged values. Once compiled for a particular ABI, a binary executable should be able to run on any system presenting the same ABI.
 
 - ABI are provided by Linux/UNIX both have ABI standard as System V 
 
@@ -117,10 +119,10 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
     
       
     
-  - ##### ABI for the X86 Architecture
+  - ##### ABI for the `X86` Architecture
   
-    - System V Application Binary Interface **AMD64** Architecture Processor Supplement - [ABI AMD64](https://cs61.seas.harvard.edu/site/2022/pdf/x86-64-abi-20210928.pdf )
-    - System V Application Binary Interface **Intel386** Architecture Processor Supplement - [ABI Intel386](https://www.uclibc.org/docs/psABI-i386.pdf)
+    - System V Application Binary Interface **`AMD64`** Architecture Processor Supplement - [ABI AMD64](https://cs61.seas.harvard.edu/site/2022/pdf/x86-64-abi-20210928.pdf )
+    - System V Application Binary Interface **`Intel386`** Architecture Processor Supplement - [ABI Intel386](https://www.uclibc.org/docs/psABI-i386.pdf)
 
 ### Startup Initializer Subsystem
 
@@ -157,10 +159,10 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
 | ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | **Size**                  | Smaller                                                      | Larger as OS and both user lie in the same address space.    |
 | **Execution**             | Slower                                                       | Faster                                                       |
-| **Extendable**            | Easily extendable                                            | Complex to extend                                            |
+| **Extend-able**           | Easily extend-able                                           | Complex to extend                                            |
 | **Security**              | If the service crashes then there is no effect on working on the micro kernel. | If the process/service crashes, the whole system crashes as both user and OS were in the same address space. |
 | **Code**                  | More code is required to write a micro kernel.               | Less code is required to write a monolithic kernel.          |
-| **Examples**              | L4Linux, macOS                                               | Windows, Linux BSD                                           |
+| **Examples**              | `L4Linux`, `macOS`                                           | Windows, Linux BSD                                           |
 | **Security**              | More secure because only essential services run in kernel mode | Susceptible to security vulnerabilities due to the amount of code running in kernel mode |
 | **Platform independence** | More portable because most drivers and services run in user space | Less portable due to direct hardware access                  |
 | **Communication**         | Message passing between user-space servers                   | Direct function calls within Kernel                          |
@@ -231,7 +233,7 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
 
       
 
-    **PRO's  of static linkage**
+    **Pro's  of static linkage**
 
     - Static executable are ready to run as soon as they are loaded (no init is needed).
 
@@ -239,7 +241,7 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
 
       
 
-    **CON's  of static linkage**
+    **Con's  of static linkage**
 
     - Static executable are difficult to maintain in the long term.
 
@@ -247,15 +249,15 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
 
       
 
-    **PRO's  of dynamic linkage**
+    **Pro's  of dynamic linkage**
 
     - Dynamic builds are modular, extensible and adaptable which enables easier long term maintenance.
 
-    - Dynamic builds can share a library image across n application which help optimal utilisation of memory in multi taking environment.
+    - Dynamic builds can share a library image across n application which help optimal utilization of memory in multi taking environment.
 
       
 
-    **CON's  of dynamic linkage**
+    **Con's  of dynamic linkage**
 
     - Dynamic linkage involves updating PLT records of the application which is variable time operation and results in initialization lag.
     - Dynamic linkages requires OS to support a run time library manager to be always present in memory(link-loader).
@@ -271,7 +273,7 @@ A-- gcc -E file.c -o file.i -->B -- gcc -S file.i -o file.s --> C-- gcc -c file.
 
 Every object file has the following components
 
-1. Header (metadata)
+1. Header (meta data)
 2. Image
 
 - We can use `readelf - a ./app` to look into the header of the app.
@@ -285,7 +287,9 @@ Every object file has the following components
 ```mermaid
 
 graph LR
+subgraph	
 A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
+end
     %%B --> C{Decision}
     %%C -->|One| D[Result one]
     %%C -->|Two| E[Result two]
@@ -293,7 +297,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
 - Process is a program in memory that is registered with the kernel
 - PCB in Linux is an instance of task structure struct task_struct
-  - cat /proc/< Process ID >/maps | more to see the program organisation
+  - cat /proc/< Process ID >/maps | more to see the program organization
 
 
 
@@ -321,7 +325,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
 - The following code is an example of dynamic linkage during run-time:
 
-  **test.c**	
+  **`test.c`**	
 
   ```c
   #include <stdio.h>
@@ -385,16 +389,16 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
    - eg: `gcc -shared -o libtest.so test.o`
 
-3. Compile main program which uses the libtest.so functions,  `-L`  specifies the location of library to **linker** and in order to request  linking `libtest` we will be providing the argument `-ltest`
+3. Compile main program which uses the `libtest.so` functions,  `-L`  specifies the location of library to **linker** and in order to request  linking `libtest` we will be providing the argument `-ltest`
 
    -  Run    `gcc -L <path_of_library_so_file> -Wall -o main.out main.c -ltest`
 
 4. Export the library path using `export LD_LIBRARY_PATH=<LIBRARY_PATH>`  we need to do this as the library is not part of standard path like `/usr/lib`     hence **loader** will look up any patch mentioned in  `LD_LIBRARY_PATH`
 
-5. run ./main.out and the output should be as below: 
+5. run ./`main.out` and the output should be as below: 
 
    > main: start of main 
-   > printing from test function in libtest.so
+   > printing from test function in `libtest.so`
 
 6. You can run the following command to know the location of the library `ldd main.out | grep test`
 
@@ -411,7 +415,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 
 - Create a shared object `libdrv.so` with following functions
 
-  **drv.c**
+  **`drv.c`**
 
   ```c
   #include <stdio.h>
@@ -427,16 +431,16 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
   }
   ```
 
-- Create a shared object from drv.c source file 
+- Create a shared object from `drv.c` source file 
 
   - generate library object file: `gcc -c -fpic drv.c -o drv.o`
   - Generate `.so` from object file `gcc -shared -o libdrv.so drv.o`
 
   
 
-- Create a dependency library libdep.so with following functions
+- Create a dependency library `libdep.so` with following functions
 
-  **dep.c**
+  **`dep.c`**
 
   ```c
   #include <stdio.h>
@@ -450,7 +454,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
   }
   ```
 
-  **dep.h**
+  **`dep.h`**
 
   ```c
   void a(void);                                                                                                                 void b(void);
@@ -484,7 +488,7 @@ A[Shell] -->B(Loader) -->C(link-loader) --> D(Process Manager)
 - proc is also a logical file system the file in proc are stored in primary memory
   - `cat /proc/meminfo`
   - refer `man 5 proc` for additional info
-- The proc filesystem is a pseudo-filesystem which provides an interface to kernel data structures.  It is commonly mounted at /proc.
+- The proc file system` is a pseudo-file system which provides an interface to kernel data structures.  It is commonly mounted at /proc.
   - `man dl` for more info on `dl`
 
 
@@ -740,8 +744,8 @@ ABI standard define system call invocation procedure.
 
 3. Trigger an software interrupt on Trap vector 
 
-   - for 32 bit  int $0x80
-   - for 64 bit syscall
+   - for 32 bit  `int $0x80`
+   - for 64 bit `syscall`
 
 4. To gather return value of a system call read from `eax` (32 bit) or `rax` (64 bit).
 
@@ -770,14 +774,14 @@ Linux System call path
 
 - User Space
 
-| Application          | Application | Application | Application |
-| -------------------- | ----------- | ----------- | ----------- |
-| **Library Language** | **Printf**  | **Malloc**  | **Fwrite**  |
-| **API**              | **Write**   | **brk**     | **Write**   |
+| Application          | Application  | Application  | Application  |
+| -------------------- | ------------ | ------------ | ------------ |
+| **Library Language** | **`Printf`** | **`Malloc`** | **`Fwrite`** |
+| **API**              | **Write**    | **`brk`**    | **Write**    |
 
 - Kernel Space
 
-| System call        | sys_write  | sys_brk          | sys_write  |
+| System call        | sys_write  | `sys_brk`        | sys_write  |
 | ------------------ | ---------- | ---------------- | ---------- |
 | **Kernel service** | **Driver** | **Buddy System** | **Driver** |
 
@@ -789,15 +793,15 @@ Linux System call path
 
 -  Heap is a segment of reserved virtual address used for run-time memory allocations.
 
-- Kernel memory manager keeps track of heap segment of heap segment of a process through memory descriptor structure (struct mm_struct).
+- Kernel memory manager keeps track of heap segment of heap segment of a process through memory descriptor structure (`struct mm_struct`).
 
 - PCB of the process contains reference to memory descriptor.
 
-- **Program brk** and **Start brk** are elements of memory descriptor which refer to heap address space.
+- **`Program brk`** and **`Start brk`** are elements of memory descriptor which refer to heap address space.
 
-- Start brk refers to the start address of the heap and Program brk refers to the top of the heap.
+- `Start brk` refers to the start address of the heap and `Program brk` refers to the top of the heap.
 
-- In the beginning of the program  Start brk and Program brk point to the same address location.
+- In the beginning of the program  `Start brk` and `Program brk` point to the same address location.
 
 - Increasing the program break has the effect of allocating memory to the process while decreasing the break deallocates memory.
 
@@ -806,7 +810,7 @@ Linux System call path
   - `int brk(void *addr);`
   - `void *sbrk(intptr_t increment);`
 
-- Program to show how to use brk and sbrk
+- Program to show how to use `brk` and `sbrk`
 
   ```c
   #include <stdio.h>
@@ -856,7 +860,7 @@ Linux System call path
 
       -  `int mallopt (int param, int value);`
 
-  - The `mallopt()` function adjusts parameters that control the behaviour of the memory allocations.
+  - The `mallopt()` function adjusts parameters that control the behavior of the memory allocations.
 
   - The following are allocation related parameters
 
@@ -952,7 +956,7 @@ Linux System call path
 
 - Kernel virtual memory subsystem carries out demand paging for efficient use of available physical memory.
 
-- Demand SIGTERMpaging is a process of identifying unused / `LRU` (least recently used) allocations and swapping out data in such memory onto a storage called swap disk.
+- Demand `SIGTERM` paging is a process of identifying unused / `LRU` (least recently used) allocations and swapping out data in such memory onto a storage called swap disk.
 
 - Memory is released for other needs once all data is swapped out of `LRU` pages.
 
@@ -1035,20 +1039,20 @@ Linux System call path
 
 
 - File systems is a kernel service implemented to manage files.
-- Storage file systems are designed to manage persistent files over a storage media to manage a storage device file system require storage partition to be initialised with a volume layout.
+- Storage file systems are designed to manage persistent files over a storage media to manage a storage device file system require storage partition to be initialized with a volume layout.
 - A volume compromises of following block of storage boot blocks, FS blocks and data blocks
-  1. **Boot Blocks**: The very first partition is called a boot block, regular file storage operations will not access boot block.
-  2. **FS Blocks**: A set block reserved for file system meta data.
-  3. Data Blocks: Blocks used for storing regular file data.
+  1. **`Boot Blocks`**: The very first partition is called a boot block, regular file storage operations will not access boot block.
+  2. **`FS Blocks`**: A set block reserved for file system meta data.
+  3. **`Data Blocks`**: Blocks used for storing regular file data.
 - **insert image here** 
 - `fdisk` is a dialog-driven program for creation and manipulation of partition tables. 
   - eg: `fdisk -l`
 
 #### Mount
 
-- Mount is an operation of booting FS blocks of a disk volume into memory.
+- Mount is an operation of booting `FS` blocks of a disk volume into memory.
 - Mount operation requires compatible file system to be specified.
-- Linux kernel supports various filesystem usually a multitude of file systems eg: EXT 2,3,4 , VFAT ,etc.
+- Linux kernel supports various file system usually a multitude of file systems eg: EXT 2,3,4 , VFAT ,etc.
   - eg: `mount -t < file system name > < src disc> < mount point >`
 - mount point is a folder which is accessible
 
@@ -1249,11 +1253,11 @@ The Following are common file API:
 
   3. ##### Read-ahead IO:
 
-     1. Read-ahead is a feature supported by most filesystem through which app programs can request FS to pre-fetch specified file data into IO cache even before the process needs it.
+     1. Read-ahead is a feature supported by most file system through which app programs can request FS to pre-fetch specified file data into IO cache even before the process needs it.
      2. Programs can initiate read ahead operations though any of the following methods
      3. `readahead()` populates the page cache with data for a file so that subsequent reads from that file will not block on disk IO.
      4. To get the size of the file 
-        1. `int stat(const char *path, struct stat* buff);`
+        1. `int stat(const char *path, struct sWTERMSIGtat* buff);`
         2. `int fstat(int fd, struct stat * buf);`
 
      ```mermaid
@@ -1268,7 +1272,9 @@ The Following are common file API:
          C(IO Cache / Paged Cache)
          D(Block Driver)
          E(HW Driver)
+         subgraph	
          A<-->B <--> C <--> D <--> E
+         end
      ```
 
      1. `int posix_fadvise(int fd, off_t offset, off_t len, int advice);`
@@ -1279,7 +1285,7 @@ The Following are common file API:
 
         -  `POSIX_FADV_NORMAL`: Default (read Block wise)
 
-        - `POSIX_FADV_SEQUENTIAL` : The app expects to access the specified data sequential file system will attempt to maximise read ahead.
+        - `POSIX_FADV_SEQUENTIAL` : The app expects to access the specified data sequential file system will attempt to maximize read ahead.
 
         - `POSIX_FADV_RANDOM` : Specifies that the application expects to access the specified data in a random order.
 
@@ -1354,20 +1360,20 @@ The Following are common file API:
      - Setup procedure
        1.  Turn on `O_DIRECT` bit of the file descriptor. This flag will cause the user buffer passed as argument to read to be considered as file cache.
           - `Fd = open("./testfile", O_READONLY | O_DIRECT);`
-       2. Setup file system block aligned buffer, only such allocations are suitable for file cache. (`fstat()` returns filesystem block size).
+       2. Setup file system block aligned buffer, only such allocations are suitable for file cache. (`fstat()` returns file system block size).
           - `int posix_memalign(void **memptr, size_t alignment, size_t size);`
           - eg: `ret = posix_memalign(&buff, allignment, size * 8);`
        3. Initiate read on the buffer for direct transfer.
           - eg: `numhead = read(fd, buf, size);`
-          - **Note**: when write API is used with direct IO buffer, FS updates the buffer with specified data and schedule disc sync.
-       4. If app is programmed to directly modify the buffer through pointer then such changes should be manually synchronised.
-       5. POSIX API `fsync()` initialises a flush of IO cache buffer onto disc.
+          - **Note**: when write API is used with direct IO buffer, `FS` updates the buffer with specified data and schedule disc sync.
+       4. If app is programmed to directly modify the buffer through pointer then such changes should be manually synchronized.
+       5. `POSIX` API `fsync()` initializes a flush of IO cache buffer onto disc.
        6. `fsync()` transfers ('flushes') all modified in-core data of the file referred by the file descriptor to the disc device. It also flushes meta data information associates with the file(see stat(2)).
        7. Direct IO is preferred in application with multiple threads to access.
 
   5. ##### Memory Mapped I/O
 
-     - This mode of IO is supported by most file systems and it allows FS to map kernel IO cache of a file to access virtual address space (`MMAP` segment).
+     - This mode of IO is supported by most file systems and it allows `FS` to map kernel IO cache of a file to access virtual address space (`MMAP` segment).
 
      - `mmap()` creates a new mapping in the virtual address space of the calling process. The start address for the new mapping is specified in `addr`. 
 
@@ -1513,20 +1519,21 @@ Process Management subsystem in kernel are composed of the following
 
   ```mermaid
   flowchart TD
+  	subgraph	
       B{Signals <64>}
       B .->|General Purpose signals| C[EVENT NOTIFICATIONS <32>]
       B .->|Real Time Signals | E[ PROCESS COMMUNICATION <32> ]
-  
+  	end
   ```
-
+  
   ##### Event Notifications
-
+  
   - Job control signals are used for triggering state change or delivering state change information. 
-
+  
   - you can use `kill -l` to now all the signals that your system supports.
-
+  
   - The  first  numeric value in each table row shows the signal number on x86, ARM, and most other architectures; the second value is for Alpha and SPARC; the third is for MIPS; and the last is for PARISC.  A dash (-) denotes that a signal is absent on the corresponding architecture.
-
+  
     ```wiki
        Signal      x86/ARM       Alpha/   MIPS   PARISC
                    most others   SPARC
@@ -1570,71 +1577,77 @@ Process Management subsystem in kernel are composed of the following
        SIGSYS          31          12      12      31
        SIGUNUSED       31          -       -       31
     ```
-
+  
   - Terminating an active process (1,2,3,9,15) - (`SIGHUP`, `SIGINT`, `SIGQUIT`, `SIGKILL`, `SIGTERM` )
-
+  
   - Asynchronous I\O : Delivered by kernel services to indicate the status of IO on a resource (23, 29 ) - (`SIGURG`, `SIGIO`, `SIGPOLL`)
-
+  
   - Timers: Timers are events delivered to a process on expiry of a specific time quantum measured on  a chosen clock.  (14, 26, 27) - (`SIGALRM`, `SIGVTALRM`, `SIGPROF`).
-
+  
   - Error reporting (4, 5, 6, 6, 7, 8, 11, 13, 16, 24, 25) - (`SIGILL`, `SIGTRAP`, `SIGABRT`, `SIGIOT`, `SIGBUS`, `SIGFPE`, `SIGSEGV`, `SIGPIPE`, `SIGSTKFLT`,  `SIGXCPU`, `SIGXFSZ`).
-
+  
   - Signals (34–64) `SIGRTMIN` to `SIGRTMAX` (Real-time Signals): Usage is  Reserved for real-time user-defined signals.
-
+  
     Purpose is to Customizable signals for real-time applications.
-
+  
   ```mermaid
   flowchart TD
       B["Source"]
-      subgraph 1
+      
       B --generation-->C[Signal Subsystem]
+      B --> F[Process]
+      B --> G[Exception Handler]
+      B --> H(Kernel services)
+      
+      subgraph  
+      F
+      G
+      H
+      end
+      
+      subgraph  
       C --delivery-->D[destination]
       D -->E[process]
       end
-      
-      subgraph 2
-      B-->F[Process]
-      B-->G[Exception Handler]
-      B-->H(Kernel services)
-      end						
+  
   ```
-
+  
   ​	
-
+  
   - A signal is considered to be generated if the source entity rises a request.
-
+  
   - A signal is considered to be delivered with the receiver  process is initialized.
-
+  
   - Signal generation might be followed by instant delivery of it but there may also be a possibility signal subsystem defers delivery of signal to later time.
-
+  
   - Any of the following might cause signal delivery to be deferred:
-
+  
     1. Receiver process is found to be handling previous occurrence of same signal.
     2. Receiver process was found to be in uninterpretable wait state.
     3. Receiver process has explicitly blocked specified signal.
-
+  
   - Undelivered signals are queued in the task structure (PCB) of the receiver process.
-
+  
   - A process can setup its response for a signal through any one of the following methods:
-
+  
     1. Kernel provides default signal handler
     2. Application specific signal handler function 
     3. Ignore signal.
-
+  
   - Addresses of responses routines are maintained in the task structure as part of signal handler tables.
-
+  
     - `stty -a` will list key combo signals.
     - man 7 signal 
-
+  
   - setting up a signal handler API :
-
+  
     - typedef void (* sighandler_t) (int);
     - setting up signal handler using `sighandler_t signal(int signum, sighandler_t handler);`
-
+  
   - sample code:
-
+  
     - `signal(SIGINT, SIG_IGN); /* to ignore signal */`
-
+  
       ```c
       #include <stdio.h>
       #include <signal.h>
@@ -1653,13 +1666,13 @@ Process Management subsystem in kernel are composed of the following
       		return 0;
       }
       ```
-
+  
       
-
+  
   - **`sigaction`**
-
+  
     - `int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *restrict oact);`
-
+  
       ```c
       #include <signal.h>
       #include <string.h>
@@ -1678,28 +1691,28 @@ Process Management subsystem in kernel are composed of the following
       	getchar();
       }
       ```
-
+  
   - `Sigaction` provides attribute flags which can be assigned while setting up handler.
-
+  
   - `SA_NODEFER` :  Don't prevent the signal from being received from with in it own signal handler (this flag turns off signal Que for the  specified handler).
-
+  
   - `SA_RESETHAND` : Restore the signal action to the default upon entry to the signal handler.
-
+  
   - Process Manager (PM) categories wait state into two types
-
+  
     1. `TASK_INTERRUPTIBLE` `(0x0001)` : A process put into this wait state can be interrupted through signals. (occurrence of a signal on such a process will cause the process to wake up and respond to the signal).
     2. `TASK_UNINTERRUPTIBLE` `(0x0002)` : A process in this wait state cannot be interrupted any signal at generated is queued.
-
+  
   - Kernel services are programmed to choose appropriate wait state to block user mode calling content.
-
+  
   - Blocking system calls be interrupted by signals, such system calls will not resume on completion of signal handler.
-
+  
   - `SA_RESTART` : Provide behavior compatible with BSD signal semantics by making certain system calls restartable across signals.
-
+  
   - `SA_ONSTACK` : Call the signal handler on a alternative signal stack provided by signal stack(2). If an alternative stack is not available, the default stack will be considered.
-
+  
   - sample code:
-
+  
     ```c
     #include <stdio.h>
     #include <stdlib.h>
@@ -1736,13 +1749,13 @@ Process Management subsystem in kernel are composed of the following
     	getchar();
     }
     ```
-
+  
   - Signal handler are preempted by occurrence of other signal.
-
+  
   -  Sig-action provides a variable (sa_mask) through which chosen signals can be blocked during execution of a priority handler.
-
+  
   - sample code:
-
+  
     ```c
     #include <stdio.h>
     #include <signal.h>
@@ -1775,13 +1788,13 @@ Process Management subsystem in kernel are composed of the following
     }
     
     ```
-
+  
   - `int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset);`
-
+  
   - `sigprocmask()` is used to fetch and/or change the signal mask of the calling thread. The signal mask is the set of signals who's delivery is currently blocked from the caller.
-
+  
   - sample code
-
+  
     ```c
     #include <signal.h>
     #include <stdio.h>
@@ -1795,11 +1808,11 @@ Process Management subsystem in kernel are composed of the following
         getchar();
     }
     ```
-
+  
   - Each occurrence of a real time signal is queued and delivered.
-
+  
   - To examine access the current list of blocked signals
-
+  
     ```c
     #include <stdio.h>
     #include <signal.h>
@@ -1828,9 +1841,9 @@ Process Management subsystem in kernel are composed of the following
     	getchar();
     }
     ```
-
+  
   - A process can append or override blocked signals without `SIG_SETMASK`.  if `SIG_SETMASK` is passed the signal will be overwritten.
-
+  
     ```c
     #include <stdio.h>
     #include <signal.h>
@@ -1846,19 +1859,19 @@ Process Management subsystem in kernel are composed of the following
         getchar();
     }
     ```
-
+  
   - A process is not allowed disposition on signal 9 (`SIGKILL`) and signal 19 (`SIGSTOP`).
-
+  
   - `int sigwaitinfo(const sigset_t *restrict set, siginfo_t *restrict info);`
-
+  
   - `int sigtimedwait(const sigset_t *restrict set, siginfo_t *restrict info, const struct timespec *restrict timeout);`
-
+  
   - `sigwaitinfo()` suspends execution of the calling thread until one of the signals is set in pending (If one of the signals is set is already pending for the calling thread, `sigwaitinfo()` will return immediately.)
-
+  
   - `sigwaitinfo()` removes the signals from the set of pending signals and return the signal number.
-
+  
   - code to handle alarm signal synchronously
-
+  
     ```c
     #include <stdio.h>
     #include <signal.h>
@@ -1884,47 +1897,357 @@ Process Management subsystem in kernel are composed of the following
         printf("sigwaitinfo() returned from signal %d  \n", results);
     }
     ```
-
+  
   - `sigqueue` - queue a signal and data process
-
+  
   - `int sigqueue(pid_t pid, int sig, const union sigval value);`
-
+  
   - `sigqueue()` sends the signal specified in signal to the process whose process id  is specified in `pid` argument.
-
+  
   - The value argument is used to specify an accompanying item of data (either an integer or a pointer value) to be sent with the signal, and has the following type:
-
+  
     ```c
     union sigval {
         int   sival_int;
         void *sival_ptr;
     };
     ```
-
+  
     
 
-    ## Concurrent Applications
+## Concurrent Applications
 
-    Applications programmed to start with a single sequence of instructions but are capable ... span dynamic execution context which can concurrently execute are called multi thread \ concurrent applications.
+Applications programmed to start with a single sequence of instructions but are capable ... span dynamic execution context which can concurrently execute are called multi thread \ concurrent applications.
 
-    ```mermaid
-    flowchart TD
-        A["concurrency"]
-        C[Kernel Suported Treads]
-        D[process \n\n address space\n + \n PCB]
-        G[[Linux threads using clone]]
-        H[[unix threads using fork]]
-        E[Light Weight process \n\n code \n + \n Stack \n+ \n PCB]
-        
-        A .->B[Thread object \n + \n code \n + \n stack]
-        A .->C
-        subgraph User Level Thread
-        B .-> F[["posix thread implemented using pthread create"]]
-        end
-        
-        subgraph  
-        C .-> D .-> H
-        C .-> E .-> G
-        end 
-    ```
+```mermaid
+flowchart TD
+    A["concurrency"]
+  
+    D[process \n\n address space\n + \n PCB]
+    G[[Linux threads using clone]]
+    H[[unix threads using fork]]
+    E[Light Weight process \n\n code \n + \n Stack \n+ \n PCB]
     
+    A .-> B[Thread object \n + \n code \n + \n stack]
+    A .-> D
+    A .-> E
+    subgraph User Level Thread
+    B .-> F[["posix thread implemented using pthread create"]]
+    end
     
+    subgraph Kernel Supported Treads
+    D .-> H
+    E .-> G
+    end 
+```
+
+- `fork()` function prototype: `pid_t fork (void);`
+
+  ```c
+  #include <unistd.h>
+  #include <stdio.h>
+  
+  int main(){
+      pid_t childpid;
+      childpid  = fork();
+      printf("%s hello fork %d\n", __func__, getpid());
+  }
+  ```
+
+- On success, the **PID** of the **child** process is returned in the **parent** and **0** is returned to the **child**.
+
+  ```c
+  #include <stdio.h>
+  #include <unistd.h>
+  
+  #define CHILD	0
+  
+  int main(){
+      pid_t childpid = fork();
+      
+      if (childpid == 0)
+      {
+          /* CHILD EXECLUSIVE CODE */
+          printf("Child pid:%d\r\n", getpid());
+      }
+      else
+      {
+          /* PARENT EXECLUSIVE CODE */
+          printf("Parent pid:%d\r\n", getpid());
+      }
+      /* PARENT AND CHILD MUTUAL CODE */
+      Printf("This will print twice\n");
+  }
+  ```
+  
+- Termination of immediate parent does not have an impact on execution of child process and vice versa is also true.
+
+- Process on termination is put into exit state(`defunc`), and it remains in exit until immediate parent destroys it. (a process in exit state can no longer contend for CPU, but it continues to hold its address space and PCB).
+
+- Parents can be programmed to handle exit event of child using any of the following methods:
+
+  1. Synchronous clean up
+     - Suspend parent process until child's termination. upon child termination parent reaps child and continues.
+     
+  2. Asynchronous clean up
+     - A process termination is notified to immediate parent by kernel's process manager.
+     - Program parent process to setup an event handler which is run in response to child termination event.
+     - Implement event handler to reap child.
+     
+  3. Auto clean up
+  
+     - Program parent to configure process manager to instantly destroy child process on termination
+  
+     Synchronous clean up
+  
+     ```c
+     #include <stdio.h>
+     #include <stdlib.h>
+     #include <unistd.h>
+     #include <sys/wait.h>
+     
+     #define CHILD	0
+     
+     int main(){
+         int status;
+         pid_t cpid = fork();
+         
+         if (cpid == CHILD){
+             printf("Executing Child and pid=%d ...\r\n", getpid());
+     		getchar();
+             printf("Exiting Child ...\r\n");
+             exit(12);
+         }
+     	else{
+             pid_t retPid = wait(&status);
+             if(retPid == -1)
+             {
+                 perror("wait failed\n");
+             }
+             printf("inside parent: after wait child pid=%d exited with status %d\r\n", retPid, WEXITSTATUS(status));
+             printf("Exiting parent\n");
+         }
+     }
+     ```
+  
+     `wait(int * childStatus)`
+  
+     {
+  
+     ​	Step 1: Suspend caller until child terminates.
+  
+     ​	Step 2: Gather exit value of child and return that as out parameter (cause of child termination can be discovered through this value).
+  
+     ​	Step 3: Instructs process manager to destroy defunct child.
+  
+     }
+  
+     Asynchronous clean up
+  
+     ```c
+     #include <stdio.h>
+     #include <stdlib.h>
+     #include <unistd.h>
+     #include <sys/wait.h>
+     
+     #define CHILD	0
+     void handler(int signum)
+     {
+         int status;
+         printf("start of signal handler");
+         wait(&status);
+         printf("Exiting signal handler", WEXITSTATUS(status));
+     }
+     
+     int main(){
+         pid_t cpid = fork();
+         
+         if (cpid == CHILD){
+             printf("Executing Child and pid=%d ...\r\n", getpid());
+     		getchar();
+             printf("Exiting Child ...\r\n");
+             exit(55);
+         }
+     	else{
+             if (signal(SIGCHLD, handler) == SIG_ERR)
+             {
+                 perror("signal failed\n");
+             }
+     
+             // printf("inside parent: after wait child pid=%d exited with status %d\r\n", retPid, WEXITSTATUS(status));
+             printf("Exiting parent\n");
+         }
+     }
+     ```
+  
+     
+  
+- Function prototype: `pid_t waitpid(pid_t pid, int *_Nullable wstatus, int options);`
+
+- All of these system call are used to wait for state change in a child of the calling process, and obtain information about the child whose state has changed, A state change is considered to be the child was stopped by a signal the child was resumed by signal.
+
+- It is preferred to set asynchronous destruction handler using `sigaction()` rather than signal.
+
+- `Sigaction()` provides a flag `SA_NOCLDSTOP` which disables delivery of `SIGCHLD` for other state change events like `SIGSTOP` or `SIGCONT`.
+
+  ```c
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
+  #include <unistd.h>
+  #include <sys/wait.h>
+  
+  #define CHILD	0
+  
+  void sighand(int signum)
+  {
+  	int status;
+  	printf("start of signal handler of process pid:%d for signal %d: %s\n", getpid(), signum, strsignal(signum));
+  	wait(&status);
+  	printf("Exiting signal handler %d\n", WEXITSTATUS(status));
+  }
+  
+  int main(){
+  	struct sigaction act;
+  	pid_t cpid = fork();
+     	if (cpid == CHILD){
+  		printf("Executing Child and pid=%d ...\r\n", getpid());
+  		getchar();
+  		printf("Exiting Child ...\r\n");
+  		while(1);
+  		exit(6);
+      }
+  	else{
+  		int childstatus;
+          	/* Disable other state change notifications (SIGSTOP, SIGCONT) */
+          	act.sa_flags = SA_NOCLDSTOP;
+          	act.sa_handler = sighand;
+          
+  		if (sigaction(SIGCHLD, &act, NULL) == -1)
+  			perror("signal failed\n");
+  		printf("Executing Parent and pid=%d ...\r\n", getpid());
+  		pid_t retPid = wait(&childstatus);
+  		printf("Exiting parent\n");
+      }
+  }
+  ```
+
+- `Sigaction` flag `SA_NOCLDWAIT` enable auto destruction  of terminated child.
+
+- Parent process will have to set this flag with default handler.
+
+  ```c
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <unistd.h>
+  #include <sys/wait.h>
+  
+  #define CHILD	0
+  
+  int main(){
+  	struct sigaction act;
+  	pid_t cpid = fork();
+     	if (cpid == CHILD){
+  		printf("Executing Child and pid=%d ...\r\n", getpid());
+  		getchar();
+  		printf("Exiting Child ...\r\n");
+  		while(1);
+  		exit(6);
+      }
+  	else{
+  		int childstatus;
+          	/* Disable other state change notifications (SIGSTOP, SIGCONT) */
+          	act.sa_flags = SA_NOCLDWAIT;
+          	act.sa_handler = SIG_DFL;
+          
+  		if (sigaction(SIGCHLD, &act, NULL) == -1)
+  			perror("signal failed\n");
+  		printf("Executing Parent and pid=%d ...\r\n", getpid());
+  		pid_t retPid = wait(&childstatus);
+  		printf("Exiting parent\n");
+      }
+  }
+  ```
+
+- If status is not `NULL` , `wait()` and `waitpid()` store status information in the int to which it points.  This integer can be inspected with the following macros:
+
+  - `WIFEXITED` : Returns true if the child terminated normally, that is by calling  exit(3) or _exit(2), or by returning from main()
+  - `WIFSIGNALED` : Returns true if the child process was terminated by a signal.
+  - `WEXITSTATUS` : Returns the exit status of the child. This consists of the least significant 8 bits of the status argument that the child specified to exit(3) or _exit(2) or as the argument for a return statement in main(). This macro should be employed only if `WIFEXITED` returned true.
+  - `WTERMSIG` : Return the no of signals that caused the child to terminate this macro should be employed by only if  `WIFSIGNALED` returned true.
+
+  ```c
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
+  #include <unistd.h>
+  #include <sys/wait.h>
+  
+  #define CHILD	0
+  
+  int main(){
+  	pid_t cpid = fork();
+  	if (cpid == CHILD){
+  		printf("Executing Child and pid=%d ...\r\n", getpid());
+  		getchar();
+  		printf("Exiting Child ...\r\n");
+  		exit(6);
+      	}
+  	else{
+  		int childstatus;
+          printf("Executing Parent and pid=%d ...\r\n", getpid());
+  		pid_t retPid = wait(&childstatus);
+  
+  		if (retPid == -1)
+  			perror("wait failed!!!\n");
+  		if (WIFEXITED(childstatus))
+  			printf("inside parent: after wait child pid=%d exited status gathered:%d\r\n", retPid, WEXITSTATUS(childstatus));
+  		if (WIFSIGNALED(childstatus))
+  			printf("%s signal caused termination\r\n",strsignal(WTERMSIG(childstatus)));
+  		while(1);
+  		printf("Exiting parent\n");
+  	}
+  }
+  
+  ```
+
+  fork()
+
+  {
+
+  ​	Step 1: Allocate  new address space.
+
+  ​    Step 2: Copy statements of caller address space to new address space.
+
+  ​	Step 3: Allocate new `task_struct` instance
+
+  ​	Step 4: Copy caller `task_struct` entries to new `task_struct` (except identification details)
+
+  ​	Step 5: Return
+
+  }
+
+  Note: When operations in step 4 executes, caller's cpu state is copied into child process PCB, causing both process to resume/start execution with same cpu state (ebp, eip, esp).
+
+- when sys_fork returns in parent context it returns the PID of the child and when it return in child context gives back 0.
+
+- Translation table\page table is part of PCB the child page table virtual addresses are same as parent
+
+- Under LINUX, fork() is implemented using copy-on-write pages, so the only penalty that it incurs is the time and memory required to duplicate.
+
+- Address space duplication is achieved through copy-on-write method, which defers actual duplication until state changes operations in Data, stack, heap, `mmap` segments of the address space are initialized by either of the process (patient or child).
+
+- Copy-on-write (cow) is applied for other resources inherited from parent to child on fork() like, signal handlers tables, file descriptors, block signal table, etc.
+
+- **Assignment**:  Launch multiple instances of an app and verify if in proc inode values for segments are same for all private ..
+
+- `pread` function prototype:   `ssize_t pread(int fildes, void *buf, size_t nbyte, off_t offset);`
+
+- `pwrite` function prototype:  `ssize_t pwrite(int fildes, const void *buf, size_t nbyte,  off_t offset);`
+
+
+
+### User Level threads using POSIX Library
+
+
+
