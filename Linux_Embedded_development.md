@@ -1641,7 +1641,7 @@ Process Management subsystem in kernel are composed of the following
   
   - setting up a signal handler API :
   
-    - typedef void (* sighandler_t) (int);
+    - typedef void (* sighandler_t) (int);pthread_detach
     - setting up signal handler using `sighandler_t signal(int signum, sighandler_t handler);`
   
   - sample code:
@@ -1752,7 +1752,7 @@ Process Management subsystem in kernel are composed of the following
   
   - Signal handler are preempted by occurrence of other signal.
   
-  -  Sig-action provides a variable (sa_mask) through which chosen signals can be blocked during execution of a priority handler.
+  -  `Sigaction` provides a variable (`sa_mask`) through which chosen signals can be blocked during execution of a priority handler.
   
   - sample code:
   
@@ -1913,7 +1913,7 @@ Process Management subsystem in kernel are composed of the following
     };
     ```
   
-    
+  1. TODO: add `sigqueue` example here
 
 ## Concurrent Applications
 
@@ -1991,7 +1991,7 @@ flowchart TD
      
   2. Asynchronous clean up
      - A process termination is notified to immediate parent by kernel's process manager.
-     - Program parent process to setup an event handler which is run in response to child termination event.
+     - Program parent process needs to setup an event handler which is run in response to child termination event.
      - Implement event handler to reap child.
      
   3. Auto clean up
@@ -2086,7 +2086,7 @@ flowchart TD
 
 - All of these system call are used to wait for state change in a child of the calling process, and obtain information about the child whose state has changed, A state change is considered to be the child was stopped by a signal the child was resumed by signal.
 
-- It is preferred to set asynchronous destruction handler using `sigaction()` rather than signal.
+- It is preferred to set asynchronous destruction handler using `sigaction()` rather than `signal()`.
 
 - `Sigaction()` provides a flag `SA_NOCLDSTOP` which disables delivery of `SIGCHLD` for other state change events like `SIGSTOP` or `SIGCONT`.
 
@@ -2151,7 +2151,7 @@ flowchart TD
   		printf("Executing Child and pid=%d ...\r\n", getpid());
   		getchar();
   		printf("Exiting Child ...\r\n");
-  		while(1);
+  		///while(1);
   		exit(6);
       }
   	else{
@@ -2163,10 +2163,12 @@ flowchart TD
   		if (sigaction(SIGCHLD, &act, NULL) == -1)
   			perror("signal failed\n");
   		printf("Executing Parent and pid=%d ...\r\n", getpid());
-  		pid_t retPid = wait(&childstatus);
+  		while(1);
+  		/* check ps for zombified child, it should not be present as it is reaped by default SA_NOCLDWAIT handler */
   		printf("Exiting parent\n");
       }
   }
+  
   ```
 
 - If status is not `NULL` , `wait()` and `waitpid()` store status information in the int to which it points.  This integer can be inspected with the following macros:
@@ -2227,19 +2229,19 @@ flowchart TD
 
   }
 
-  Note: When operations in step 4 executes, caller's cpu state is copied into child process PCB, causing both process to resume/start execution with same cpu state (ebp, eip, esp).
+  Note: When operations in step 4 executes, caller's CPU state is copied into child process PCB, causing both process to resume/start execution with same CPU state (`ebp`, `eip`, `esp`).
 
 - when sys_fork returns in parent context it returns the PID of the child and when it return in child context gives back 0.
 
 - Translation table\page table is part of PCB the child page table virtual addresses are same as parent
 
-- Under LINUX, fork() is implemented using copy-on-write pages, so the only penalty that it incurs is the time and memory required to duplicate.
+- Under LINUX, fork() is implemented using **copy-on-write** pages, so the only penalty that it incurs is the time and memory required to duplicate.
 
-- Address space duplication is achieved through copy-on-write method, which defers actual duplication until state changes operations in Data, stack, heap, `mmap` segments of the address space are initialized by either of the process (patient or child).
+- Address space duplication is achieved through **copy-on-write** method, which defers actual duplication until state changes operations in Data, stack, heap, `mmap` segments of the address space are initialized by either of the process (patient or child).
 
 - Copy-on-write (cow) is applied for other resources inherited from parent to child on fork() like, signal handlers tables, file descriptors, block signal table, etc.
 
-- **Assignment**:  Launch multiple instances of an app and verify if in proc inode values for segments are same for all private ..
+- **Assignment**:  Launch multiple instances of an app and verify if in proc `inode` values for segments are same for all private ...
 
 - `pread` function prototype:   `ssize_t pread(int fildes, void *buf, size_t nbyte, off_t offset);`
 
@@ -2249,5 +2251,401 @@ flowchart TD
 
 ### User Level threads using POSIX Library
 
+- `Pthread` library organization
 
+  1. Thread creation and management calls
+     - `Pthread_t`, `pthread_attr_t`, `pthread_once_t`
+  2. Thread synchronization
+     - `pthread_cond_t`,` pthread_barrier_t`,` pthread_sigmask`
+  3. Shared data access sync calls
+     - `pthread_mutex`, `rwlock_t`, `sem_t`, `pthread_spinlock_t`
+  4. Timer events
+     - `timer_t`
+  5. Hardware access calls
+     - implemented only on real time OS i.e some real-time Linux implementation not present in `General Purpose OS (GPOS) POSIX  library`.
 
+  
+  
+- Function naming convention
+
+  1. Standard POSIX thread calls
+     1. `libname_dataobject_operation_name()`
+     2. `libname_operationname()`
+  2. Platform specific extension to `pthreads`
+     1. `libname_dataobject_operation_np (non- POSIX/ non portable)`.
+
+- `pthread_create` function prototype ` int pthread_create(pthread * thread, const pthread_attr_t *attr, void * (*start_routine) (void*), void *arg)`
+
+- The `pthread_create` function starts a new thread in the calling process. The new thread starts execution by invoking start routine(). `arg` is passed as the sole argument of start routine().
+
+  ``` c
+  #include <stdio.h>
+  #include <string.h>
+  #include <stdlib.h>
+  #include <pthread.h>
+  
+  static void *threadFunction(void *arg){
+  	char *s = (char *)arg;
+  	printf("%s: argstring: %s\r\n", __func__, s);
+  	getchar();
+  	return (void *) strlen(s);
+  }
+  
+  int main(){
+  	pthread_t t1;
+  	void *res;
+  	int ret;
+  
+  	printf("creating a thread\r\n");
+  	ret = pthread_create(&t1, NULL, threadFunction, "Hello World");
+  	if (ret != 0)
+  	{
+  		perror("pthread_create error!!!\r\n");
+  		exit(EXIT_FAILURE);
+  	}
+  	ret = pthread_join(t1, &res);
+  	if(ret != 0)
+  	{
+  		perror("pthread_join error !!!\r\n");
+  	}
+  	printf("%s: Thread return %ld \r\n", __func__, (long)res);
+  }
+  ```
+
+- `pthread_join` function prototype `int pthread_join(pthread_t thread, void **retval);`
+
+  - The `pthread_join()` function waits for the thread specified by  `thread` to terminate.
+
+-   `pthread_exit` function prototype `[[noreturn]] void pthread_exit(void *retval);`
+
+  - The `pthread_exit()` function terminates the calling function and returns a value `retval`. To allow other threads to continue execution, the main thread should terminate by calling `pthread_exit()`
+
+#### Thread Attributes
+
+- A thread can be created by applying a specific set of attributes through instance of a structure.
+
+  - `pthread_attr_init()` function prototype `int pthread_attr_init(pthread_attr_t *attr);`
+
+- Attributes of `pthread` are as below
+
+  1. **Detach state**: The attribute is used to choose destruction mode of the current thread. possible values are
+
+     1. `PTHREAD_CREATE_JOINABLE` : This value will make thread to remain in exit state until some other thread calls `pthread_join()` to collect exit value.
+     2. `PTHREAD_CREATE_DETACHED` : This value will cause thread to be created as a detached thread. detached threads are automatically destroyed on termination.
+
+     eg: `LinuxPro/threads/part1/ex2.c`
+
+     ```c
+     /* detached_attrib.c
+     
+        An example of the use of POSIX thread attributes (pthread_attr_t):
+        creating a detached thread.
+     */
+     
+     #include <stdio.h>
+     #include <stdlib.h>
+     #include <unistd.h>
+     #include <errno.h>
+     #include <pthread.h>
+     
+     #define DEATH(mess) { perror(mess); exit(errno); }
+     
+     int *ret;
+     static void *joinablethread(void *x)
+     {
+     	int i = 0, tid;
+     	printf("\n %s: \n",__func__);
+     	tid = pthread_self();
+     	ret = (int *)x;
+     	for (i = 0; i < 10; i++) {
+     		printf(" iam in thread %d\n", tid);
+     		sleep(5);
+     	}
+     	return &ret;
+     }
+     
+     static void *detachedthread(void *x)
+     {
+     	int i = 0, tid;
+     
+     	tid = pthread_self();
+     	for (i = 0; i < 10; i++) {
+     		printf(" iam in thread %d\n", tid);
+     		sleep(10);
+     	}
+     	pthread_exit(NULL);
+     }
+     
+     int main()
+     {
+     	pthread_t tcb, tcb1;
+     	pthread_attr_t attr;
+     	int ret;
+     	void *res;
+     
+     	ret = pthread_attr_init(&attr);	/* Assigns default values */
+     	if (ret != 0)
+     		perror("pthread_attr_init");
+     
+     	/* assign detached state to PTHREAD_CREATE_DECTACHED */
+     	ret = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+     	if (ret != 0)
+     		perror("pthread_attr_getdetachstate");
+     
+     	ret = pthread_create(&tcb, NULL, joinablethread, (void *)1);
+     	if (ret != 0)
+     		DEATH("pthread_create");
+     
+     	ret = pthread_create(&tcb1, &attr, detachedthread, (void *)1);
+     	if (ret != 0)
+     		DEATH("pthread_create");
+     
+     	ret = pthread_join(tcb1, &res);
+     	if (ret != 0)
+     		perror("pthread_join failed as expected");
+     	printf("Joinable Thread returned %ld\n", (long)res);
+     
+     	pthread_exit(NULL);
+     }
+     ```
+
+     NOTE: 
+
+     - Values specified through attribute object are copied into thread object during creation of the thread. 
+     - A thread can be moved from join-able to detached at run time through a function `pthread_detach`.
+     -  The function marks the thread identified by thread are detached, list of attributes can be accessed within the thread.
+       - `pthread_attr_t attr;`
+       - `pthread_getattr_np (pthread_self(), &attr);`
+     - A detached thread cannot be made join-able again.
+
+  2. Scope: This attribute specifies scheduling scope for the thread, the possible values are
+
+     1. `PTHREAD_SCOPE_SYSTEM`: This value will cause the thread to be managed by kernel system scheduler
+     2. `PTHREAD_SCOPE_PROCESS`: This value will cause the thread to be managed by process level scheduler. default value is system.
+
+     NOTE:
+
+     - Linux implementation of `pthread` does not support threads with process scope.
+     - The `PTHREAD_SCOPE_SYSTEM` contention scope typical indicate that a user space thread is bound directly to a single kernel scheduling entity.
+     - `tid = syscall(SYS_gettid); /* to get tid in created thread here tid is the pid of the thread*/`
+
+  3. `Kernel process scheduler`: Process scheduler is implemented as 2 distinct layers. `man sched_setscheduler` 
+
+     1. core scheduler:  This layer carries out physical process scheduling operation. It is priority primitive with support of 0-99 priority queue for each plug-ins to core scheduler.
+
+        -  scheduling policies currently supported are categories into 2 groups
+
+          1. General purpose scheduling process (`man sched)`:
+             - `SCHED_OTHER` : the standard round-robin time sharing policy
+             - `SCHED_BATCH` :  for 'batch' style execution of process.
+             - `SCHED_IDLE` : for running very low priority background jobs.
+          2. Real time scheduling policies:
+             - `SCHED_FIFO` : a first in, first-out policy. 
+             - `SCHED_RR` : Round-robin scheduling policy.
+
+        - lets go over this scheduling policies in details
+
+          1. General purpose scheduling policy
+
+             1. `SCHED_OTHER` : 
+                - Default policy for all process and POSIX threads.
+                - operates on dynamic priority and state priority zero(0).
+                - scheduling computes dynamic priority based on following factors
+                  - Amount of time process/ thread is waiting for CPU.
+                  - nice value is assigned.
+                  - Type of process / thread (I/O bound or CPU bound).
+                  - process / threads using this policy have nondeterministic execution times.
+             2. `SCHED_BATCH` : This policy is similar to `SCHED_OTHER` in that it schedules the thread according to its dynamic priority (based in the mice value). The difference is that this policy will cause the scheduler to always assume that the thread is CPU intensive.
+             3. `SCHED_IDLE` : The policy is intended for running jobs at extremely low priority (low even than a +19 nice value with the `SCHED_OTHER` or `SCHED_BATCH` policies).
+
+          2.  Real time scheduling policy
+
+             1. `SCHED_FIFO` : First in first out scheduling. `SCHED_FIFO` can be used only with static priorities higher than 0. `SCHED_FIFO` is a simple scheduling algorithm without time slicing for thread scheduling under the `SCHED_FIFO` policy.
+
+                - If a `SCHED_FIFO` is preempted by scheduler(due to higher priority and interrupt) will stay at the head of its list and will resume execution as soon as its priority list is chosen for execution.
+                - A FIFO process or thread preempted due to I\O calls enters its priority list from the tail end
+                - A FIFO process or thread is moved to end of priority list on voluntary preemption `sched_yield ()` is used for voluntary preemption.
+                - A call  to `sched_setscheduler()` or `sched_setparam()` will put the `SCHED_FIFO`(or  `SCHED_RR`) thread identified by PID at the start of the list if it was runnable. As a consequence, it may preempt currently running thread if it has the same priority.
+
+             2. `SCHED_RR` : 
+
+                - Everything described above for `SCHED_FIFO` also applies to `SCHED_RR`, except that each thread is allowed to run only for a maximum time quantum. If a `SCHED_RR` thread has been running for a time period equal to a longer than the time quantum, it will be put at the list for its priority.
+
+                - sample to read policy/priority in force
+
+                  ```c
+                  struct sched_param param;
+                  int policy;
+                  policy = sched_getscheduler(0); /* 0 or pid is same */
+                  sched_getparam(0, &param);
+                  ```
+
+                - sample to set priority/policy
+
+                  ```c
+                  struct sched_param param;
+                  param.sched_priority = 60;
+                  sched_setscheduler(0, SCHED_RR, &param);
+                  ```
+
+                - Parents policy and priority are applied to child process upon fork().
+
+                - While changing policy and priority in parent scheduler inheritance to child can be turned of by using flags `SCHED_RESET_ON_FORK`.
+
+                  - prototype: `int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param);`
+                  - eg: `sched_setscheduler(0, SCHED_RR|SCHED_RESET_ON_FORK, &param);`
+
+     2. CPU Affinity: 
+
+        1. On a multiprocessor system, setting the CPU affinity mask can be used to obtain performance benefits.
+
+        2. If its possible to ensure maximum execution speed of the thread.
+
+        3. A CPU affinity mask is represented by the `cpu_set_t` structure, a 'cpu set', pointed to by the mask.
+
+        4. `sched_setaffinity()` set the CPU affinity mask of the thread whose ID is PID to the value specified by the
+
+           1. prototype : `void CPU_ZERO(cpu_set_t *set);`
+
+           2. prototype : `void CPU_SET(int cpu, cpu_set_t *set);`
+
+              ```c
+              CPU_ZERO(&set);
+              CPU_SET(0, &set);
+              CPU_SET(1, &set);
+              sched_setaffinity(0, sizeof(set), &set);
+              ```
+
+  4. Inherit Scheduler: This attribute is used to enable or disable scheduler inheritance from parent possible values are:
+
+     1. `PTHREAD_INHERIT_SCHED` : 
+     2. `PTHREAD_EXPLICIT_SCHED` : 
+
+  5. Scheduling Policy :  Specified the policy to be applied for the current thread, Default is `SHED_OTHER`.
+
+  6. Scheduling Priority : Specifies the priority to be applied default is zero.
+
+     Sample code:
+
+     ```c
+     static void *t_routine(void *x)
+     {
+     	int tid, policy;
+     	struct sched_param param;
+         
+         tid = pthread_self();
+     	printf(" iam in thread %d\n", tid);
+     	pthread_getschedparam(tid, &policy, &param);
+         pthread_exit(NULL);
+     }
+     
+     int main(){
+     	pthread_t tcb;
+     	pthread_attr_t attr;
+     	struct sched_param param;
+     	pthread_attr_init(&attr);
+     	/* switch off scheduler inheritance from parent */
+     	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+         /* Assign sched policy and priority */
+         policy = SCHEDULE_FIFO;
+         pthread_attr_setschedpolicy(&attr, policy);
+         param.schedpriority = 10;
+         pthread_attr_setschedparam(&attr, &param);
+         /* create thread with choosen attributes */
+         pthread_create(&tcb, &attr, t_routine, NULL);
+         pthread_attr_destroy(&attr);
+         pthread_yeild();
+         sleep(2);
+         param.sched_priority = 20;
+         policy = SCHED_RR;
+         pthread_setschedparam(tcb, policy, &param);
+         pthread_exit(NULL);
+     }
+     
+     ```
+
+     - `pthread_setaffinity_np()` to set affinity in thread.
+
+  7. Stack attributes: These attributes are used to allocate stack segment and stack overflow flag
+
+     - 2 MB is the default size of the stack for each thread.
+     - **Stack Guard** is a null page(no physical memory map) used to identify stack fault and prevent corruption of subsequent address space beyond the thread stack.
+
+     ```c
+     int main(){
+     	pthread_t tcb;
+     	pthread_attr_t attr;
+     	
+         pthread_attr_init(&attr);
+         addr = malloc(16 * 1024);
+         
+         if (add == NULL){
+             printf("allocation failed\n");
+             return -1;
+         }
+         printf("%s: 16K allocated with start address %p \n", __func__, (int *)addr);
+         pthread_attr_setstack(&attr, addr, 16 * 1024);
+         /* Assign attribute to thread during creation */
+         ret = pthread_create(&th1, &attr, start_routine, NULL);
+         void *stk;
+         size_t size;
+         /* gather attributes from thread object */
+         pthread_getattr_np(pthread_self(), &attr);
+         pthread_attr_getstack(&attr, &stk, &size);
+     }
+     ```
+
+#### Synchronizing access to shared data
+
+- Assuming that the following the code is part of 2 different threads both programmed to increment a shared counted a fixed    number of times.
+
+  ```c
+  static int global = 0;
+  
+  static void *threadFunc(void * arg){
+      int local, j;
+      int loops = * ((int *)arg);
+      for (j = 0; j < loops; j++){
+          local = global; /* (1) */
+          local++;
+          global = local; /* (2) */
+      }
+      return NULL;
+  }
+  ```
+
+- Line (1) and (2) data access race instructions. when these instructions occurs in same point in time in more than (1) CPU the shared data variable global is corrupted. To ensure consistency of shared variable despite execution of race instructions atomic operations must be engaged,
+
+- "machine instructions" that read or change data in single un-interrupted steps are called atomic operations, various processor Instructions set Architectures support atomic instructions:
+
+- "Atomic" is this context means "all or nothing", either we succeed in completing the operation with no interruption or we fail to even begin the operations.
+
+- common atomic instructions:
+
+  - Fetch-and-add
+
+    - Atomically increments a value while returning the old value at a particular address.
+
+    - The c pseudo code for the fetch- and-add instruction looks like this:
+
+      ```c
+      int fetchAndAdd(int *addr)
+      {
+          int old = *addr;
+          *addr = old + 1;
+          return old;
+      }
+      
+      for(int j = 0; j < loops; j++){
+          __sync__fetch_and_add(&glob, 1); /* GNU C atomic op macro */
+      }
+      ```
+
+- Atomic instructions can only be applied only on CPU word size data (32 bit/ 64 bit).
+
+## Questions
+
+1. in asynchronous child reaping if parent exits before child no handler is executed, how do we avoid this ?
+2.  **copy-on-write** why does common variable have same address in child and parent even  
+3. What is the point of having separate signal handler stack .
+4.  
