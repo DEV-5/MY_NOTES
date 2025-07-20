@@ -2412,7 +2412,7 @@ flowchart TD
      NOTE: 
 
      - Values specified through attribute object are copied into thread object during creation of the thread. 
-     - A thread can be moved from join-able to detached at run time through a function `pthread_detach`.
+     - A thread can be moved from join-able to detached at run time through a function `pthread_detach()`.
      -  The function marks the thread identified by thread are detached, list of attributes can be accessed within the thread.
        - `pthread_attr_t attr;`
        - `pthread_getattr_np (pthread_self(), &attr);`
@@ -2433,7 +2433,7 @@ flowchart TD
 
      1. core scheduler:  This layer carries out physical process scheduling operation. It is priority primitive with support of 0-99 priority queue for each plug-ins to core scheduler.
 
-        -  scheduling policies currently supported are categories into 2 groups
+        -  scheduling policies currently supported are categories-ed into 2 groups
 
           1. General purpose scheduling process (`man sched)`:
              - `SCHED_OTHER` : the standard round-robin time sharing policy
@@ -2455,7 +2455,7 @@ flowchart TD
                   - nice value is assigned.
                   - Type of process / thread (I/O bound or CPU bound).
                   - process / threads using this policy have nondeterministic execution times.
-             2. `SCHED_BATCH` : This policy is similar to `SCHED_OTHER` in that it schedules the thread according to its dynamic priority (based in the mice value). The difference is that this policy will cause the scheduler to always assume that the thread is CPU intensive.
+             2. `SCHED_BATCH` : This policy is similar to `SCHED_OTHER` in that it schedules the thread according to its dynamic priority (based on the nice value). The difference is that this policy will cause the scheduler to always assume that the thread is **CPU intensive**.
              3. `SCHED_IDLE` : The policy is intended for running jobs at extremely low priority (low even than a +19 nice value with the `SCHED_OTHER` or `SCHED_BATCH` policies).
 
           2.  Real time scheduling policy
@@ -2497,29 +2497,29 @@ flowchart TD
 
      2. CPU Affinity: 
 
-        1. On a multiprocessor system, setting the CPU affinity mask can be used to obtain performance benefits.
+        - On a multiprocessor system, setting the CPU affinity mask can be used to obtain performance benefits.
 
-        2. If its possible to ensure maximum execution speed of the thread.
+        - If its possible to ensure maximum execution speed of the thread.
 
-        3. A CPU affinity mask is represented by the `cpu_set_t` structure, a 'cpu set', pointed to by the mask.
+        - A CPU affinity mask is represented by the `cpu_set_t` structure, a 'CPU set', pointed to by the mask.
 
-        4. `sched_setaffinity()` set the CPU affinity mask of the thread whose ID is PID to the value specified by the
+        - `sched_setaffinity()` set the CPU affinity mask of the thread whose ID is PID to the value specified by the
 
-           1. prototype : `void CPU_ZERO(cpu_set_t *set);`
+          - prototype : `void CPU_ZERO(cpu_set_t *set);`
 
-           2. prototype : `void CPU_SET(int cpu, cpu_set_t *set);`
+          - prototype : `void CPU_SET(int cpu, cpu_set_t *set);`
 
-              ```c
-              CPU_ZERO(&set);
-              CPU_SET(0, &set);
-              CPU_SET(1, &set);
-              sched_setaffinity(0, sizeof(set), &set);
-              ```
+            ```c
+            CPU_ZERO(&set);
+            CPU_SET(0, &set);
+            CPU_SET(1, &set);
+            sched_setaffinity(0, sizeof(set), &set);
+            ```
 
   4. Inherit Scheduler: This attribute is used to enable or disable scheduler inheritance from parent possible values are:
 
-     1. `PTHREAD_INHERIT_SCHED` : 
-     2. `PTHREAD_EXPLICIT_SCHED` : 
+     1. `PTHREAD_INHERIT_SCHED` :  This flag enables the policy and priority inheritance from the parent. This is default
+     2. `PTHREAD_EXPLICIT_SCHED` :  This flag turns off the inheritance from the parent.
 
   5. Scheduling Policy :  Specified the policy to be applied for the current thread, Default is `SHED_OTHER`.
 
@@ -2536,6 +2536,7 @@ flowchart TD
          tid = pthread_self();
      	printf(" iam in thread %d\n", tid);
      	pthread_getschedparam(tid, &policy, &param);
+         printf("priority is:%d and %d")
          pthread_exit(NULL);
      }
      
@@ -2543,12 +2544,13 @@ flowchart TD
      	pthread_t tcb;
      	pthread_attr_t attr;
      	struct sched_param param;
+         
      	pthread_attr_init(&attr);
      	/* switch off scheduler inheritance from parent */
      	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
          /* Assign sched policy and priority */
-         policy = SCHEDULE_FIFO;
-         pthread_attr_setschedpolicy(&attr, policy);
+         int policy = SCHEDULE_FIFO;
+         pthread_attr_setschedpolicy(&attr, policy); 
          param.schedpriority = 10;
          pthread_attr_setschedparam(&attr, &param);
          /* create thread with choosen attributes */
@@ -2561,7 +2563,6 @@ flowchart TD
          pthread_setschedparam(tcb, policy, &param);
          pthread_exit(NULL);
      }
-     
      ```
 
      - `pthread_setaffinity_np()` to set affinity in thread.
@@ -2572,6 +2573,8 @@ flowchart TD
      - **Stack Guard** is a null page(no physical memory map) used to identify stack fault and prevent corruption of subsequent address space beyond the thread stack.
 
      ```c
+     /* add thread function here */
+     
      int main(){
      	pthread_t tcb;
      	pthread_attr_t attr;
@@ -2612,6 +2615,10 @@ flowchart TD
       }
       return NULL;
   }
+  
+  void main(){
+      
+  }
   ```
 
 - Line (1) and (2) data access race instructions. when these instructions occurs in same point in time in more than (1) CPU the shared data variable global is corrupted. To ensure consistency of shared variable despite execution of race instructions atomic operations must be engaged,
@@ -2626,7 +2633,7 @@ flowchart TD
 
     - Atomically increments a value while returning the old value at a particular address.
 
-    - The c pseudo code for the fetch- and-add instruction looks like this:
+    - The c pseudo code for the fetch-and-add instruction looks like this:
 
       ```c
       int fetchAndAdd(int *addr)
@@ -2641,11 +2648,118 @@ flowchart TD
       }
       ```
 
-- Atomic instructions can only be applied only on CPU word size data (32 bit/ 64 bit).
+- Atomic instructions can be applied only on CPU word size data (32 bit/ 64 bit).
+
+- Synchronizing access to shared data between contending threads using mutual execution protocols.
+
+- To sync access to **custom sized shared data** exclusion flags called lock flags are used through an API called locking API. The following sample code shows design of one such API.
+
+  ```c
+  typedef struct __lock_t {
+      int flag;
+  }lock_t;
+  
+  void lock_init(lock_t *lck){
+      lck->flag = 0;
+  }
+  
+  void lock(lock_t *lck){
+      while (__sync_lock_test_and_set(&lck-> flag, 1)==1);
+  }
+  
+  void unblock(lock_t *lck){
+      lck->flag = 0;
+  }
+  ```
+
+- Test and set c sudo code: All machine code is for 1 machine cycle.
+
+  ```c
+  int TestAndSet(int *oldptr, int new){
+      int old = *old_ptr; /* Fetch old value at ptr */
+      *old_ptr = new; /* Store "new" into old ptr */
+      return old; /* return the old value */
+  }
+  ```
+
+- The instruction has different name  on SPARC it is
+
+- Compare and swap
+
+  ```c
+  int compareAndSwap(int *ptr, int expected, int new){
+      int actual = *ptr;
+      if (actual == expected)
+          *ptr=new;
+      return actual;
+  }
+  ```
+
+  - The basic idea is for `compareAndSwap()` is to test whether the value at the address specified by `ptr` is equal to `expected`, if so update the memory location pointed to by `ptr` with the new value, If not do nothing.
+  
+  - GCC provides a function for this operation `__sync_val_compare_and_swap(type *ptr, type oldval, type newval, ...);`
+  
+  - Resource: https://gcc.gnu.org/onlinedocs/gcc-4.1.0/gcc/Atomic-Builtins.html
+  
+    ```c
+    void lock(lock_t *lck){
+        while(__sync_val_compare_and_swap(&lck->flag,0,1) == 1);
+    }
+    ```
+  
+  - Current design of lock API doesn't guarantee lock acquisition order as a result when ever lock is released it might be acquired by a random thread among contenders a particular thread or a group of threads might never acquire lock acquisition.
+  
+  - In order to guarantee lock acquisition exclusion protocol must be slightly altered to allow current owner to pass ownership to the next thread as per the contention order instead of releasing the lock.
+  
+    ```c
+    typedef struct __lock_t {
+    int seq;
+    int lock;
+    }tlock_t;
+    
+    void lock_init(tlock_t * lck){
+        lck->seq  = 0;
+        lck->lock = 1;
+    }
+    ```
+  
+  - Each contending thread reads current value of seq counter, which is its token to own the lock. It then polls on the lock counter until its turn arrives.
+  
+  - When both 'lock' and 'ticket' counter match function returns and caller thread owns the lock.
+  
+  - type` __sync_fetch_and_add (`type` *ptr, `type` value, ...)`
+  
+    ```c
+    void lock (tlock_t *lck)
+    {
+        int myticket;
+        mycticket = __sync_fetch_and_add(&lck->seq, 1);
+        while(lck->lock != myticket)
+    }
+    
+    /* void unlock(tlock_t *lck)
+     * arg1 lck: address of lock instance
+     * Description: Unlock will increment lock counter by 1, which uses lock to be 
+     * passed on to the next counter with an appropriate ticket (token)
+     */
+    
+    void unlock(tlock_t *lck)
+    {
+        lck->lock = lck->lock + 1;
+    }
+    ```
+  
+  - **Limitation** : Current implementation causes contending threads to poll until lock is acquired, polling for long nondeterministic time may cause wastage of CPU time.
+  
+  - Lock APIs are able to put lock contending tasks into wait state (Io preemption) until lock becomes available to put a thread.\process into wait state lock structure must include a wait queue and lock and unlock routines must be programmed to put the contending threads into wait queue when lock acquisition fails and wakeup waiter when lock becomes available.
+  
+  - 
+  
+    
 
 ## Questions
 
 1. in asynchronous child reaping if parent exits before child no handler is executed, how do we avoid this ?
 2.  **copy-on-write** why does common variable have same address in child and parent even  
 3. What is the point of having separate signal handler stack .
-4.  
+4.  why does main thread become zombie if it exits with pthread_exit() by sub thread is still running ?``
