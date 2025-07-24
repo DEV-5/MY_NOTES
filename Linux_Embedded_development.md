@@ -2696,21 +2696,21 @@ flowchart TD
   ```
 
   - The basic idea is for `compareAndSwap()` is to test whether the value at the address specified by `ptr` is equal to `expected`, if so update the memory location pointed to by `ptr` with the new value, If not do nothing.
-  
+
   - GCC provides a function for this operation `__sync_val_compare_and_swap(type *ptr, type oldval, type newval, ...);`
-  
+
   - Resource: https://gcc.gnu.org/onlinedocs/gcc-4.1.0/gcc/Atomic-Builtins.html
-  
+
     ```c
     void lock(lock_t *lck){
         while(__sync_val_compare_and_swap(&lck->flag,0,1) == 1);
     }
     ```
-  
+
   - Current design of lock API doesn't guarantee lock acquisition order as a result when ever lock is released it might be acquired by a random thread among contenders a particular thread or a group of threads might never acquire lock acquisition.
-  
+
   - In order to guarantee lock acquisition exclusion protocol must be slightly altered to allow current owner to pass ownership to the next thread as per the contention order instead of releasing the lock.
-  
+
     ```c
     typedef struct __lock_t {
     int seq;
@@ -2722,13 +2722,13 @@ flowchart TD
         lck->lock = 1;
     }
     ```
-  
+
   - Each contending thread reads current value of seq counter, which is its token to own the lock. It then polls on the lock counter until its turn arrives.
-  
+
   - When both 'lock' and 'ticket' counter match function returns and caller thread owns the lock.
-  
+
   - type` __sync_fetch_and_add (`type` *ptr, `type` value, ...)`
-  
+
     ```c
     void lock (tlock_t *lck)
     {
@@ -2748,18 +2748,121 @@ flowchart TD
         lck->lock = lck->lock + 1;
     }
     ```
-  
+
   - **Limitation** : Current implementation causes contending threads to poll until lock is acquired, polling for long nondeterministic time may cause wastage of CPU time.
-  
-  - Lock APIs are able to put lock contending tasks into wait state (Io preemption) until lock becomes available to put a thread.\process into wait state lock structure must include a wait queue and lock and unlock routines must be programmed to put the contending threads into wait queue when lock acquisition fails and wakeup waiter when lock becomes available.
-  
-  - 
-  
+
+  - Lock APIs are able to put lock contending tasks into wait state (Io preemption) until lock becomes available to put a thread. process into wait state lock structure must include a wait queue and lock and unlock routines must be programmed to put the contending threads into wait queue when lock acquisition fails and wakeup waiter when lock becomes available.
+
+    sample pseudo code:
+
+    ```c
+    struct wait_lock{
+        int lock_counter;
+        struct wait_list *head;
+    };
+    
+    int wait_lock(){
+        1. decrement lock counter
+        2. if above step failed push caller into wait_list
+        3. return success 
+    }
+    
+    int wait_unlock(){
+        1. increment lock counter
+        2. wakeup waiter
+        3. return success
+    }
+    ```
+
+  - If threads are managed by kernel scheduler the the waitlist must be in kernel space.
+
+  - If threads are managed entirely in user space then wait list must be provided by the library which provides process level scheduler.
+
+    
+
+  #### Semaphores
+
+  1) Kernel/ library managed atomic counters that can never be less than 0.
+  2) Kernel/library provide atomic increment and decrement functions/APIs.
+  3) Each semaphore is associated with a wait-queue.
+  4) when a process attempts to decrement semaphore while it is at 0 (value of `sem` == 0) process is put into wait-queue.
+  5) when a semaphore is incremented from 0 to 1 waiter in semaphore queue are flushed.
+
+  - Implementation of the following code is lock API's using Linux kernel semaphores
+
+    ```c
+    typedef struct __lock_t{
+        sem_t sem;
+    } lock_t;
+    
+    void lock__init(lock_t *lck){
+        sem_init(&lck->sem, 0, 1);
+    }
+    
+    void lock(lock_t *lck){
+        sem_wait(&lck->sem);
+    }
+    
+    void unlock(lock_t *lck){
+        sem_post(&lck->sem);
+    }
+    ```
+
+  -  They are 2 types of mutual execution lock protocols
+
+    - Poll locking
+    - wait locking
+
+  - Threading libraries implement both of the protocols through appropriate API.
+
+  - APIs implementing poll protocol are called spin-lock and APIs implementing wait protocol are called mutex lock.
+
+  - which lock should preferred and when ?
+
+    - Apply poll based synchronization 
+      - when lock is held for fixed/deterministic duration.
+      - lock protecting atomic data units.
+      - fully atomic (non-blocking ) critical code.
+    - Apply wait based synchronization when
+      - lock is held for variable time.
+      - lock protecting large data units with variable access time.
+      - Critical code containing possible blocking calls.
+
+  - Wait lock implementation  induce additional performance penalties into app code. (instruction overhead and memory overhead).
+
+  - To reduce overhead imposed by wait-locking semaphores can be redesigned to allocate atomic counters in user mode (instead of kernel mode) and wait-queue in the kernel mode.
+
+  - Linux kernel provides an API called `Futex` through which an user mode counter with a wait-queue is provided in the kernel.
+
+  - The Linux kernel provides `futexes` (fast user-space `mutexes`) as a building block for fast user locking.
+
+  - In its bare form, a `futex`  has a semaphore  semantics, its a counter that can be incremented and decremented atomically, process can wait for the wait the value to become positive.
+
+  - `Futex` operation is entirely user-space for the non contended case. The kernel is involved only to arbitrate the contended case.
+
+    ```mermaid
+    flowchart TD
+        B["Lock"]
+        
+        B --> C[Poll - spinlock]
+        B --> F[Wait - mutex]
+        
+        subgraph  
+        F --> G[semaphore]
+        F --> H[futex]
+        end
+        
+        subgraph  
+        C --> D[Normal]
+        C --> E[Ticketed]
+        end
+    ```
+
     
 
 ## Questions
 
 1. in asynchronous child reaping if parent exits before child no handler is executed, how do we avoid this ?
-2.  **copy-on-write** why does common variable have same address in child and parent even  
-3. What is the point of having separate signal handler stack .
-4.  why does main thread become zombie if it exits with pthread_exit() by sub thread is still running ?``
+2.  **copy-on-write** why does common variable have same address in child and parent even.
+3. What is the point of having separate signal handler stack.
+4.  why does main thread become zombie if it exits with pthread_exit() by sub thread is still running ?
