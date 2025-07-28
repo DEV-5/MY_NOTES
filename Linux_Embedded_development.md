@@ -1148,7 +1148,7 @@ The Following are common file API:
   		fprintf(stderr, "error opening source file");
   		exit(1);
   	}
-  
+  Devicetree nodes are defined with a node name and unit address with braces marking the start and end of the node definition.
   
   	openFlags = O_CREAT | O_WRONLY | O_TRUNC;
   	filePerms = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;	/* rw-rw-rw- */
@@ -2774,7 +2774,7 @@ flowchart TD
     }
     ```
 
-  - If threads are managed by kernel scheduler the the waitlist must be in kernel space.
+  - If threads are managed by kernel scheduler the the wait-list must be in kernel space.
 
   - If threads are managed entirely in user space then wait list must be provided by the library which provides process level scheduler.
 
@@ -2788,7 +2788,7 @@ flowchart TD
   4) when a process attempts to decrement semaphore while it is at 0 (value of `sem` == 0) process is put into wait-queue.
   5) when a semaphore is incremented from 0 to 1 waiter in semaphore queue are flushed.
 
-  - Implementation of the following code is lock API's using Linux kernel semaphores
+  - Implementation of the following code is lock APIs using Linux kernel semaphores
 
     ```c
     typedef struct __lock_t{
@@ -2808,10 +2808,12 @@ flowchart TD
     }
     ```
 
-  -  They are 2 types of mutual execution lock protocols
+  - They are 2 types of mutual execution lock protocols
 
     - Poll locking
     - wait locking
+
+  - official kernel https://docs.kernel.org/locking/locktypes.html
 
   - Threading libraries implement both of the protocols through appropriate API.
 
@@ -2858,11 +2860,172 @@ flowchart TD
         end
     ```
 
-    
+  - `Pthread` implementation is derived from Linux kernel `futexes`
+
+  - A `mutex` is represented by instance of a structure `pthread_mutex_t`. The following are valid operations on a `mutex` :
+
+    - `   int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr);`   
+    - `int pthread_mutex_destroy(pthread_mutex_t *mutex);`
+    - `   int pthread_mutex_lock(pthread_mutex_t *mutex);`
+    - `int pthread_mutex_trylock(pthread_mutex_t *mutex);`
+    - `int pthread_mutex_unlock(pthread_mutex_t *mutex);`
+
+  - The following sample document the incorrect usage of lock API and possible failures
+
+    - Case 1 -> Accidental release: Occurs when a thread attempts to release a lock which it does not own.
+
+      ```mermaid
+      flowchart TD
+          subgraph Thread2
+          B["/* Critical code */ \n pthread_mutex_unlock(&mtx);"]
+          end
+          subgraph Thread1
+          A["pthread_mutex_lock(&mtx); \n /* Critical code */ \n pthread_mutex_unlock(&mtx);"]
+          end
+      ```
+
+      - result: causes failure of mutual exclusion protocol.
+
+    - Case 2 -> Recursive Deadlock: Occurs when a thread attempts to acquire a lock which already owns.
+
+      ```mermaid
+      flowchart TD
+          subgraph func1
+          B["pthread_mutex_lock(&mtx);\n /* Critical code */"]
+          end
+          subgraph Thread1
+          A["pthread_mutex_lock(&mtx); \n func1(); \n func2(); \n pthread_mutex_unlock(&mtx);"]
+          end
+      ```
+
+      - Results: Cause all the lock contending threads to block. (deadlock)
+
+    - Case 3 -> owner death Deadlock: Occurs when a thread terminates without releasing the lock which it owns.
+
+      ```mermaid
+      flowchart TD
+          subgraph func1
+          B["pthread_mutex_lock(&mtx);\n /* Critical code */ \n ret = func(); \n if (ret < 0) \n  pthread_exit(); \n pthread_mutex_unlock(&mtx);"]
+          end 
+      ```
+
+      
+
+      - Result: causes all the lock contending threads to be blocked (deadlock)
+      
+    - Case 4 -> circular deadlock: Occurs when nested locking calls are randomly ordered across contending threads.  
+
+      ```mermaid
+      flowchart TD
+          subgraph Thread2
+          B["pthread_mutex_lock(&mtxB); \n pthread_mutex_lock(&mtxA); \n/* Critical code */ \n pthread_mutex_unlock(&mtxB); \n pthread_mutex_unlock(&mtxA);"]
+          end
+          subgraph Thread1
+          A["pthread_mutex_lock(&mtxA); \n pthread_mutex_lock(&mtxB); \n /* Critical code */ \n pthread_mutex_unlock(&mtxA); \n pthread_mutex_unlock(&mtxB);"]
+          end
+      ```
+
+      - Result: Deadlock of both `Thread1` and `Thread2`.
+
+    - Case 5 -> Recursive unlock: Occurs when a thread attempts to release a lock with it doesn't own
+  
+      ```mermaid
+      flowchart TD
+          subgraph Thread1
+          A["pthread_mutex_lock(&mtxA); \n /* Critical code */\n ret = Func();\n pthread_mutex_unlock(&mtx); \n pthread_mutex_unlock(&mtx);"]
+          end
+      ```
+  
+    - Case 6: Incorrect release of a live-lock occurs when dynamic memory containing lock and data is released while they are in use.
+  
+      ```c
+      typedef struct{
+          pthread_mutex_t lock;
+          int a;
+          int b;
+          int c;
+      } shdata_t;
+      
+      void *ptr;
+      
+      main_thread(){
+          shdata_t *ptr = (shdata_t *) malloc(sizeof(shdata_t));
+      }
+      ```
+  
+      ```mermaid
+      flowchart TD
+          subgraph Thread2
+          B["free(ptr); \n /* Perform it's functionality */"]
+          end
+          
+          subgraph Thread1
+          A["pthread_mutex_lock(ptr->lock); \n ptr->a = 10; \n ptr->b = 20; \n ptr->c = 30;\n pthread_mutex_unlock(ptr->lock);"]
+          end
+      ```
+  
+      - Result: May lead to dangling pointer access and memory corruption.
+  
+    - Case 7: Re-initialization of a live-lock occurs when  a thread re-initializes a lock instance owned by another thread.
+  
+        
+  
+      ```c
+      pthread_mutex_t mylock;
+      
+      init_mutex(pthread_mutex_t *lock){
+          pthread_mutex_init(lock, NULL);
+      }
+      
+      thrstart(){
+          init_mutex(&mylock);
+          pthread_mutex_unlock(&mylock);
+          /* some work */
+          pthread_mutex_unlock(&mylock);
+      }
+      
+      int main(){
+          pthread_t t1, t2, t3;
+          
+          pthread_create(&t1, NULL, thrstart, NULL);
+          pthread_create(&t2, NULL, thrstart, NULL);
+          pthread_create(&t3, NULL, thrstart, NULL);
+      }
+      ```
+  
+  - The following  document fixes for the incorrect usage of lock API
+  
+    - Case 1 -> Accidental release: Occurs when a thread attempts to release a lock which it does not own.
+      - Fix : Program `pthread_mutex_unlock()` routine to verify if calling thread owns the lock. Routine must release the lock only when it finds calling thread owns the lock. extend lock structure with "owner id". program lock() routine to initialize `owner id` with `tid` of the thread that successfully acquire lock.
+    - Case 2 -> Recursive Deadlock: Occurs when a thread attempts to acquire a lock which already owns. 
+      - Fix : Program lock() routine to verify if calling thread already owns the lock and grant recursive lock ownership or return with a failure indicating lock is already owned.
+    - Case 3 -> owner death Deadlock: Occurs when a thread terminates without releasing the lock which it owns.
+      - Fix: Extend the lock structure to contain a timer (timer_T instance). program lock() routine to arm interval timer when lock is granted to calling thread. program unlock() routine to turnoff the timer. Timer routine must verify status of the owner thread and wakeup lock contending waiting thread when it discovered owner-death.
+    - Case 4 -> circular deadlock: Occurs when nested locking calls are randomly ordered across contending threads.
+      - Fix:  Ensure common nested locking order.
+    - Case 5 -> Recursive unlock: Occurs when a thread attempts to release a lock with it doesn't own
+      - Fix: same fix as case 1.
+    - Case 6: Incorrect release of a live-lock occurs when dynamic memory containing lock and data is released while they are in use.
+      - Fix: Worker-threads must not be allowed to allocate or deallocate shared memory regions.
+    - Case 7: Re-initialization of a live-lock occurs when  a thread re-initializes a lock instance owned by another thread.
+      - Fix: Program (`lock_init()` / `init_mutex()`) routine with an static atomic counter, initializing the counter to 1 on first call. program routine to return failure status on subsequent call.
+  
+  - `Mutex` and `spinlock` API implementations support all of the above validations within lock and unlock routines . However by default error check validations are disabled with an intention of reducing  execution overhead.
+  
+  - API implementations provide methods to enable validation when required.
+
+## Device Tree
+
+**Nodes** : Device tree nodes are defined with a node name and unit address with braces marking the start and end of the node definition. Nodes may contain property definitions and/or child node definitions. If both are present, properties shall come before child nodes.
+
+**Properties** : Each node in the device tree has properties that describe the characteristics of the node. Properties consist of a name and a value.
+
+
 
 ## Questions
 
 1. in asynchronous child reaping if parent exits before child no handler is executed, how do we avoid this ?
-2.  **copy-on-write** why does common variable have same address in child and parent even.
+2.  **copy-on-write** why does common variable have same address in child and parent even after writing tp common variable in child.
 3. What is the point of having separate signal handler stack.
-4.  why does main thread become zombie if it exits with pthread_exit() by sub thread is still running ?
+4.  why does main thread become zombie if it exits with pthread_exit() but sub thread is still running ?
+5. how are semaphores different from `mutex`.
