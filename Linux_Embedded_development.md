@@ -2928,16 +2928,16 @@ flowchart TD
       - Result: Deadlock of both `Thread1` and `Thread2`.
 
     - Case 5 -> Recursive unlock: Occurs when a thread attempts to release a lock with it doesn't own
-  
+
       ```mermaid
       flowchart TD
           subgraph Thread1
           A["pthread_mutex_lock(&mtxA); \n /* Critical code */\n ret = Func();\n pthread_mutex_unlock(&mtx); \n pthread_mutex_unlock(&mtx);"]
           end
       ```
-  
+
     - Case 6: Incorrect release of a live-lock occurs when dynamic memory containing lock and data is released while they are in use.
-  
+
       ```c
       typedef struct{
           pthread_mutex_t lock;
@@ -2952,7 +2952,7 @@ flowchart TD
           shdata_t *ptr = (shdata_t *) malloc(sizeof(shdata_t));
       }
       ```
-  
+
       ```mermaid
       flowchart TD
           subgraph Thread2
@@ -2963,13 +2963,13 @@ flowchart TD
           A["pthread_mutex_lock(ptr->lock); \n ptr->a = 10; \n ptr->b = 20; \n ptr->c = 30;\n pthread_mutex_unlock(ptr->lock);"]
           end
       ```
-  
+
       - Result: May lead to dangling pointer access and memory corruption.
-  
+
     - Case 7: Re-initialization of a live-lock occurs when  a thread re-initializes a lock instance owned by another thread.
-  
+
         
-  
+
       ```c
       pthread_mutex_t mylock;
       
@@ -2992,9 +2992,9 @@ flowchart TD
           pthread_create(&t3, NULL, thrstart, NULL);
       }
       ```
-  
+
   - The following  document fixes for the incorrect usage of lock API
-  
+
     - Case 1 -> Accidental release: Occurs when a thread attempts to release a lock which it does not own.
       - Fix : Program `pthread_mutex_unlock()` routine to verify if calling thread owns the lock. Routine must release the lock only when it finds calling thread owns the lock. extend lock structure with "owner id". program lock() routine to initialize `owner id` with `tid` of the thread that successfully acquire lock.
     - Case 2 -> Recursive Deadlock: Occurs when a thread attempts to acquire a lock which already owns. 
@@ -3009,10 +3009,269 @@ flowchart TD
       - Fix: Worker-threads must not be allowed to allocate or deallocate shared memory regions.
     - Case 7: Re-initialization of a live-lock occurs when  a thread re-initializes a lock instance owned by another thread.
       - Fix: Program (`lock_init()` / `init_mutex()`) routine with an static atomic counter, initializing the counter to 1 on first call. program routine to return failure status on subsequent call.
-  
+
   - `Mutex` and `spinlock` API implementations support all of the above validations within lock and unlock routines . However by default error check validations are disabled with an intention of reducing  execution overhead.
-  
+
   - API implementations provide methods to enable validation when required.
+
+  - `Pthread` provides a set of macros through which a thread can enable validations when required.
+
+  - The following are the macros provided: 
+
+  - `PTHREAD_MUTEX_ERRORCHECK`:
+
+    - Recursive locking attempts results with failure,
+    - Accidental release attempt shall fail.
+    - Recursive unlock attempt shall fail.
+
+  - `PTHREAD_MUTEX_RECURSIVE` :
+
+    - Recursive lock attempt is allowed to succeed (provided owner must unlock same no of times as lock was held).
+    - Accidental release attempt shall fail.
+    - Recursive unlock attempt is allowed to succeed on recursive lock.
+
+  - `PTHREAD_MUTEX_ROBUST` :
+
+    - check for owner death deadlock.
+
+    - sample code:
+
+      ```c
+      pthread_mutexattr_t attr;
+      pthread_mutexattr_init(&attr);
+      pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+      pthread_mutex_init(&mutex, &attr);
+      pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+      ```
+
+  - Recursive locks are preferred when various modules share common data protected by a lock.
+
+  - owner death 
+
+    - /* step 1: step checks for owner death deadlock */
+    - `pthread_mutexattr_setrobust_np( &attr, PTHREAD_MUTEX_ROBUST);`
+    - `pthread_mutex_init(&mutex, &attr);`
+
+  - Recovery from owner death: 
+
+    - owner death is reported to the next contending thread which was supposed to be owner of the lock when released.
+    - Recovery must be programmed with the following tasks:
+      1. restore shared data into valid state.
+      2. Erase ownership record from lock instance.
+      3. Release the lock.
+
+  - Lock design patterns:
+
+    - Giant locking : A lock applied to protect huge volume of shared data contending by hundreds of threads is called giant lock. eg: A lock to protect whole database, directory level lock, system call level locks.
+
+      - PROs:
+
+        - Guaranteed data protection.
+        - Easier maintenance and debugging.
+        - Minimum overhead.
+
+      - CONs:
+
+        - Maximized lock contention.
+
+        - Cannot utilize many cores on processor.
+
+          
+
+    - Coarse grained  locking:
+
+      - When shared data is logically split to multiple functional modules which can be concurrently accused and each protected by a lock.
+      - eg: Table level lock in a database, file level lock in a directory, kernel service level locks.
+      - PROs:
+        - Improved concurrency and many more hardware utilization.
+        - Reduced lock contention.
+      - CONs:
+        - Increased lock overhead requires active code maintenance and debugging.
+
+    - Fine grained locking : 
+
+      - Shared data is organized into smalled concurrently accessible units each protected by its own lock.
+
+      - eg: Record level locking in database, region lock in a file, operation level locks in kernel services.
+
+      - PROs:
+
+        - Minimize lock contention.
+        - Maximum optimum utilization of many core hardware.
+
+      - CONs:
+
+        - Maximized lock overhead.
+
+        - Complex code management and debugging.
+
+          
+
+  - To verify a particular lock application is fine grained its contention must be measured this is achieved by most implementations by instrumenting lock structures with additional counters. These counters are incremented by lock function whenever lock acquisition attempt failed.
+
+  - `Futexes` help improve performance and reduce lock overhead when specific lock is designed to be fine grained.
+
+  - Standard mutual execution must not be applied on read intensive shared data (shared data which is concurrently accessed by multiple threads).
+
+  - Reader-writer exclusion: Is designed to enforce following:
+
+    1. No Exclusion between readers. (readers can share a lock and access data concurrently).
+    2. Standard exclusion between reader and writer.
+    3. Standard exclusion enforced between multiple writers trying for same lock.
+
+  - pthread read write lock functions:
+
+  - /* static initialization */
+
+    - `pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;`
+
+    - `int pthread_rwlock_init(pthread_rwlock_t *restrict rwlock, const pthread_rwlockattr_t *restrict attr);`
+
+      
+
+  - /* write lock */
+
+    - `int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);`
+
+    - `int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);`
+
+    - `int pthread_rwlock_timedwrlock(pthread_rwlock_t *restrict rwlock, const struct timespec *restrict abstime);`
+
+      
+
+  - /* reader lock interface */
+
+    - `int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);`
+    - `int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);`
+    - `int pthread_rwlock_timedrdlock(pthread_rwlock_t *restrict rwlock,  const struct timespec *restrict abstime);`
+
+  
+
+  - /* common */
+
+    - `int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);`
+
+    
+
+  - Limitation of read and writer exclusion:
+
+    - Reader writer exclusion is designed considering reader priority resulting in indeterministic lock contention by writers.
+
+    - Read intensive data with time sensitive updates should not be protected using reading writer lock.
+
+    - Reader / writer locks with writer priority:
+
+    - Reader writer exclusion is modified by eliminating reader side lock API i.e. reader would no longer need to acquire a lock to access shared data.
+
+      ```c
+      typedef struct {
+          pthread_spinlock_t lockCount;
+          sem_t writecount;
+      } rw_lock_t;
+      
+      rd_lock (rw_lock_t *lock) {
+          return sem_getval(&lock->writeCount);
+      }
+      
+      rd_unlock(rwlock_t *lock){
+          return pthread_spin_lock(&lock->lockCount);
+      }
+      
+      wr_lock(rwlock_t *lock){
+          pthread_spin_lock(&lock->lockCount);
+      }
+      
+      wr_unlock(rwlock_T *lock){
+          pthread_spin_unlock(lock->lockCount);
+          sem_post(lock->writeCount);
+      }
+      
+      int count;
+      
+      do{
+          count = rd_lock(&mylock);
+      }while(count!=rd_unlock(&mylock));
+      ```
+
+  - Reader retries on race with writer.
+
+  - Mutual exclusion between writers.
+
+  - Must be applied on small data units.
+
+  - General but on top of spin lock interfaces.
+
+  - For large volume of shared data accessed by frequent readers, read-copy-update locks are used.
+
+    
+
+### Thread Synchronization
+
+- Threading libraries provide various resources for synchronizing execution of groups of threads.
+
+- Synchronization resources can be categorized into two types:
+
+  - Condition sync
+  - Unconditional sync
+
+- Conditional synchronization is required while checking a set of threads to execute sequentially on a common job . example: producer - consumer threads.
+
+- Conditional sync can be achieved either through poll or wait conditions.
+
+- The following code snippet is of producer-consumer threads synchronized through poll condition.
+
+  ```c
+  static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+  static int avail = 0; /* shared data unit */
+  
+  /* producer code */
+  
+  static void *threadFunc(void * arg){
+      int cnt = 20;
+      int j;
+      for (j = 0; i < cnt; j++){
+          sleep(1);
+          pthread_mutex_lock(&mtx);
+          avail++;
+          pthread_mutex_unlock(&mtx);
+      }
+      return NULL;
+  }
+  
+  int main(){
+      int consumed = 0;
+      bool done;
+      int totalRequired = 10;
+      for (;;){
+          /* acquire lock on shared data */
+          pthread_mutex_lock(&mtx);
+       	/* check if data is produced, consume if ready */
+          while (avail > 0){
+              numConsumed++;
+              avail--;
+              printf("%s Data Unit Consumed = %D\n", __func__, numConsumed);
+          	done = (numConsumed >= totalRequired);
+          }
+          /* unlock mutex */
+          pthread_mutex_unlock(&mtx);
+       	if (done){
+              break;
+          }
+      }
+  }
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
 
 ## Device Tree
 
