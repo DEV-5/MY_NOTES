@@ -1535,49 +1535,9 @@ Process Management subsystem in kernel are composed of the following
   - The  first  numeric value in each table row shows the signal number on x86, ARM, and most other architectures; the second value is for Alpha and SPARC; the third is for MIPS; and the last is for PARISC.  A dash (-) denotes that a signal is absent on the corresponding architecture.
   
     ```wiki
-       Signal      x86/ARM       Alpha/   MIPS   PARISC
-                   most others   SPARC
-       ─────────────────────────────────────────────────────────────────
-       SIGHUP           1           1       1       1
-       SIGINT           2           2       2       2
-       SIGQUIT          3           3       3       3
-       SIGILL           4           4       4       4
-       SIGTRAP          5           5       5       5
-       SIGABRT          6           6       6       6
-       SIGIOT           6           6       6       6
-       SIGBUS           7          10      10      10
-       SIGEMT           -           7       7      -
-       SIGFPE           8           8       8       8
-       SIGKILL          9           9       9       9
-       SIGUSR1         10          30      16      16
-       SIGSEGV         11          11      11      11
-       SIGUSR2         12          31      17      17
-       SIGPIPE         13          13      13      13
-       SIGALRM         14          14      14      14
-       SIGTERM         15          15      15      15
-       SIGSTKFLT       16          -       -        7
-       SIGCHLD         17          20      18      18
-       SIGCLD           -          -       18      -
-       SIGCONT         18          19      25      26
-       SIGSTOP         19          17      23      24
-       SIGTSTP         20          18      24      25
-       SIGTTIN         21          21      26      27
-       SIGTTOU         22          22      27      28
-       SIGURG          23          16      21      29
-       SIGXCPU         24          24      30      12
-       SIGXFSZ         25          25      31      30
-       SIGVTALRM       26          26      28      20
-       SIGPROF         27          27      29      21
-       SIGWINCH        28          28      20      23
-       SIGIO           29          23      22      22
-       SIGPOLL                                           Same as SIGIO
-       SIGPWR          30         29/-     19      19
-       SIGINFO          -         29/-     -       -
-       SIGLOST          -         -/29     -       -
-       SIGSYS          31          12      12      31
-       SIGUNUSED       31          -       -       31
+       Signal      x86/ARM       Alpha/   MIPS   PARISC               most others   SPARC   ─────────────────────────────────────────────────────────────────   SIGHUP           1           1       1       1   SIGINT           2           2       2       2   SIGQUIT          3           3       3       3   SIGILL           4           4       4       4   SIGTRAP          5           5       5       5   SIGABRT          6           6       6       6   SIGIOT           6           6       6       6   SIGBUS           7          10      10      10   SIGEMT           -           7       7      -   SIGFPE           8           8       8       8   SIGKILL          9           9       9       9   SIGUSR1         10          30      16      16   SIGSEGV         11          11      11      11   SIGUSR2         12          31      17      17   SIGPIPE         13          13      13      13   SIGALRM         14          14      14      14   SIGTERM         15          15      15      15   SIGSTKFLT       16          -       -        7   SIGCHLD         17          20      18      18   SIGCLD           -          -       18      -   SIGCONT         18          19      25      26   SIGSTOP         19          17      23      24   SIGTSTP         20          18      24      25   SIGTTIN         21          21      26      27   SIGTTOU         22          22      27      28   SIGURG          23          16      21      29   SIGXCPU         24          24      30      12   SIGXFSZ         25          25      31      30   SIGVTALRM       26          26      28      20   SIGPROF         27          27      29      21   SIGWINCH        28          28      20      23   SIGIO           29          23      22      22   SIGPOLL                                           Same as SIGIO   SIGPWR          30         29/-     19      19   SIGINFO          -         29/-     -       -   SIGLOST          -         -/29     -       -   SIGSYS          31          12      12      31   SIGUNUSED       31          -       -       31
     ```
-  
+    
   - Terminating an active process (1,2,3,9,15) - (`SIGHUP`, `SIGINT`, `SIGQUIT`, `SIGKILL`, `SIGTERM` )
   
   - Asynchronous I\O : Delivered by kernel services to indicate the status of IO on a resource (23, 29 ) - (`SIGURG`, `SIGIO`, `SIGPOLL`)
@@ -2091,7 +2051,11 @@ flowchart TD
 - `Sigaction()` provides a flag `SA_NOCLDSTOP` which disables delivery of `SIGCHLD` for other state change events like `SIGSTOP` or `SIGCONT`.
 
   ```c
-  #include <stdio.h>
+  
+  int main(){
+  	struct sigaction act;
+  	pid_t cpid = fork();
+     	if (cpid == CHILD){#include <stdio.h>
   #include <stdlib.h>
   #include <string.h>
   #include <unistd.h>
@@ -3076,18 +3040,16 @@ flowchart TD
 
         - Cannot utilize many cores on processor.
 
-          
-
     - Coarse grained  locking:
 
       - When shared data is logically split to multiple functional modules which can be concurrently accused and each protected by a lock.
-      - eg: Table level lock in a database, file level lock in a directory, kernel service level locks.
+    - eg: Table level lock in a database, file level lock in a directory, kernel service level locks.
       - PROs:
         - Improved concurrency and many more hardware utilization.
         - Reduced lock contention.
       - CONs:
         - Increased lock overhead requires active code maintenance and debugging.
-
+    
     - Fine grained locking : 
 
       - Shared data is organized into smalled concurrently accessible units each protected by its own lock.
@@ -3097,8 +3059,8 @@ flowchart TD
       - PROs:
 
         - Minimize lock contention.
-        - Maximum optimum utilization of many core hardware.
-
+      - Maximum optimum utilization of many core hardware.
+    
       - CONs:
 
         - Maximized lock overhead.
@@ -3118,7 +3080,7 @@ flowchart TD
     1. No Exclusion between readers. (readers can share a lock and access data concurrently).
     2. Standard exclusion between reader and writer.
     3. Standard exclusion enforced between multiple writers trying for same lock.
-
+  
   - pthread read write lock functions:
 
   - /* static initialization */
@@ -3144,7 +3106,7 @@ flowchart TD
     - `int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);`
     - `int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);`
     - `int pthread_rwlock_timedrdlock(pthread_rwlock_t *restrict rwlock,  const struct timespec *restrict abstime);`
-
+  
   
 
   - /* common */
@@ -3192,7 +3154,7 @@ flowchart TD
           count = rd_lock(&mylock);
       }while(count!=rd_unlock(&mylock));
       ```
-
+  
   - Reader retries on race with writer.
 
   - Mutual exclusion between writers.
@@ -3261,13 +3223,268 @@ flowchart TD
   }
   ```
 
+
+
+
+- Consumer is currently synchronized through poll condition using a semaphore consumer can be reprogrammed to synchronize through wait condition.
+
+  ```c
+  static sem_t;
+  
+  sem_init(&sem, 0 , 0);
+  
+  static void * threadFunc(void *arg){
+      for(;;){
+          sempost(&sem); /* wake-up consumer */
+      }
+  }
+  
+  main(){
+      for(;;){
+          pthread_mutex_lock(&mtx);
+          /* check if data is produced, if data is not ready yet unlock mutex &wait for data to be produced*/
+          if (avail == 0){
+              pthread_mutex_unlock(&mtx);
+              /* using semaphore as conditional wait flag */
+              sem_wait(&sem);
+              pthread_mutex_lock(&mtx);
+          }
+      }
+  }
+  ```
+
+- Limitation : engaging a semaphore can provide a sync between 1 producer and 1 consumer.
+
+- using a futex producer can be programmed to wakeup multiple consumers.
+
+- changed code: 
+
+  ```c
+  static int futex(int *vaddr, int futex_op, int val; const struct timespec *timeout, int *vaddr2, int val3){
+      return syscall(SYS_FUTEX, vaddr, futex_op, val, timeout, vaddr2, val3);
+  }
+  
+  static int wflag;
+  
+  /* prod code */
+  
+  static void *threadFunc(void *arg)
+  {
+      ;;;
+      for(int i =0; i < cnt; i ++){
+         ;;;
+      	wflags = 1;
+          futex(&wflag, FUTEX_WAKE, 1 /* set to no of thread to be waken up from waitque*/, NULL, NULL, 0);
+      }
+  }
+  
+  main(){
+      ;;;
+      for (;;){
+          ;;;
+          if (avail == 0){
+              ;;;
+              wflags = 0;
+              futex(&wflags, FUTEX_WAIT, 0, NULL, NULL, 0);
+              printf(" Wakeup trigerred\n");
+          }
+      }
+  }
+  ```
+
+
+
+
+- Condition variables are posix thread data types which implements futex as conditional wait flags.
+
+- Thread apps are to use conditional variables directly instead of futex. A condition variable is declared and intialized as follows.  
+
+  - `static pthread_cond_t cond = PTHREAD_COND_INTIALIZER;`
+
+- Producer can wakeup consumer using either 
+
+  - `int pthread_cond_signal(pthread_cond_t *cond);`
+  - `int pthread_cond_brodcast(pthread_cond_t *cond);`
+
+- Consumer can be put to sleep using
+
+  - `int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);`
+
+    ```c
+    while (avail == 0) { /* wait for units to consume */
+    	ret = pthread_cond_wait(&cond, &mtx);
+        /*
+        1. Unlock mutex
+        2. waits for condition to be signalled
+        3. lock mutex
+        */
+    }
+    
+    // producer
+    
+    static void *threadFunc(void *arg){
+        ;;;
+        ret pthread_cond;
+    }
+    ```
+
+- Spurious wakeup from the `pthread_cond_timedwait() ` or `pthread_cond_wait()` functions may occur since the return from `pthread_cond_timedwait()` or `pthread_cond_wait()` doesn't imply anything about the value of this predicate, the predicate should be re-evaluated upon such return.
+
+  - `int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);`
+  - `int pthread_cond_timedwait(pthread_cond_t *cond,pthread_mutex_t *mutex, const struct timespec *abstime);`
+
   
 
+### Unconditional Synchronization
+
+- Barriers are special atomic counters used for achieving unconditional sync.
+
+- Pthread library implement barrier with a type `pthread_barrier_t`
+
+- A barrier is initialized with a count equal to number of threads to be synced.
+
+  ```c
+  pthread_barrier_t barier;
+  pthread_barrier_init(&barrier, NULL, 3);
+  ```
+
+- `pthread_barrier_wait()` is used to sync participating threads on barrier.
+
+- The calling thread shall block until the required  number of threads have called `pthread_barrier_wait()` specifying the barrier.
+
+- Unconditional sync achieved through barrier is applied in parallel processing.
+
+- Drawback: When n threads are being synced and even if 1 thread exits \ terminates. 
+
+- Memory barrier instructions in ARM cortex-M architecture - [Link](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://documentation-service.arm.com/static/5efefb97dbdee951c1cd5aaf&ved=2ahUKEwjAhJz3n5iPAxV01zgGHX0pJ6IQFnoECBgQAQ&usg=AOvVaw3Xf__-mot50nCWp0Bm0zr2)
+
+  | Instruction                               | Description                                                  |
+  | ----------------------------------------- | ------------------------------------------------------------ |
+  | Data memory synchronization barrier (DMD) | Ensures that all explicit data memory transfer before the DSB are complete before any instruction after the DSB is executed. |
+  | Data synchronization barrier (DSB)        | Ensures that all explicit data memory transfers before the DMB are completed before any subsequent data memory transfers after the DMB starts. |
+  | Instruction synchronization barrier (ISB) | Ensures that the effects of all context altering operations prior to the ISB are recognized by subsequent instructions. This results in a flushing of the instruction pipeline, with the instruction following the ISB being re-fetched. |
 
 
 
+#### Thread Cancellations
+
+- Any thread could raise a cancellation request to other thread or thread this is achieved through a function `pthread_cancel`
+- whether an when  the target reacts to the cancellation request demands on two attributes that are under the control of that thread it cancel-ability state and type.
+- The thread cancel-able state can be enabled (by default) or disabled.
+- cancellation type may be either asynchronous or deferred . Asynchronous cancel-ability means that the thread can be canceled at any time.
+- Deferred cancel-ability means the cancellation will be delayed until the thread next calls a function that is a cancellation point (if the thread goes to wait).
+- Deferred is the default types from new threads.
+- To turn of cancellation:
+  - int s = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+
+#### Thread Cancellation cleanup handlers
+
+- Threads can be programmed to step special programs\functions called cleanup handlers when a thread is canceled.
+  - `void pthread_cleanup_push(void (*routine)(void *), void *arg);`
+- The `pthread_cleanup_push()` function pushes routine onto the top of the stack of clean-up handles. when routines is invoke, it will be given `arg` as its argument.
+- A cancellation cleanup handler is `poped` from the stack and executed in the following circumstances:
+  1. when a thread is canceled.
+  2. when thread terminates by calling `pthread_exit(3)`
+  3. When a thread calls `pthread_clean_pop()`
+- clean-up handlers are not called if the thread terminates by performing a return from the thread start function.
 
 
+
+#### Pthread_once
+
+- Using a special counter called "once" . apps can be programmed to ensure onetime execution of any routine, subsequent calls to same function are ignored.
+
+  ```c
+  pthread_once_t once = PTHREAD_ONCE_INIT;
+  pthread_mutex_t *mymutex;
+  
+  void *mythread(void *arg){
+      int i =0;
+      pthread_once(&once, (void *) myinit);
+      /*
+      	Checks once counter
+      	if (once >0)
+      		return -1;
+      		run intalizer
+      		increment once Counter
+      */
+  }
+  ```
+
+  
+
+### TIMER
+
+Timer is an event delivered to a process on expiry of time quantum measured on a clock.
+
+-  Timers are used to achieve an of the following :
+
+  1. Periodic operations.
+  2. Implementations of delay calls
+  3. Scheduling threads.
+  4. deferring operation to run later.
+  5. Measuring latencies of specific operations.
+  6. Converting blocking to bounded wait calls.
+
+- `Glibc` provides support for system V BSD timer interface and Linux native timer interface. 
+
+  - `int setitimer(int which, const struct itimerval *restrict new_value, struct itimerval *_Nullable restrict old_value);`
+
+- The first argument (which) is used to specify the clock:
+
+  - `ITIMER_REAL` :  Decrements in real time and delivers `SIGALRM`upon expiration.
+
+  - `ITIMER_VIRTUAL` :  Decrements only when the process is executing and delivers `SIGVTALRM`upon expiration.
+
+  - `ITIMER_PROF` :  Decrements both when the process executes and when the system is executing on behalf of the process. `SIGPROF` is delivered upon expiration.
+
+  - Timeout are specified on instance of time itimerval.
+
+    ```c
+      //    Timer values are defined by the following structures:
+    
+               struct itimerval {
+                   struct timeval it_interval; /* Interval for periodic timer */
+                   struct timeval it_value;    /* Time until next expiration */
+               };
+    
+               struct timeval {
+                   time_t      tv_sec;         /* seconds */
+                   suseconds_t tv_usec;        /* microseconds */
+               };
+    ```
+
+    
+
+  - sample code:
+
+    ```c
+     struct itimerval itv;
+    
+    /* set timer */
+    
+    itv.it_value.tv_sec = 1; // intial event
+    itv.it_value.tv_usec = 0;
+    
+    itv.it_interval.tv_sec = 1; // intial event
+    itv.it_interval.tv_usec = 0;
+    
+    setitimer(ITIMER_REAL, &itv, NULL);
+    
+    /* example to convert unbounded wait to bounded wait calls: */
+    alarm(2);
+    numread = read(STDIN_FILENO, buf, BUF_SIZE - 1);
+    ```
+
+  - Limitation: process is not allowed to setup multiple timers of same types.
+  - Interface doesn't provide option for process to gather information of missed events.	
+
+
+
+#### Posix timer Api
+
+- `Posix` interval timer api's  provide the following features:
+  1. 
 
 
 
